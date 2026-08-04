@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/app/globals.css"
+        ],
+        "createdAt": "2026-08-01T04:27:12.833Z",
+        "reason": "Blockquote left-border is Markdown rendering convention (kenoma-prose/kenoma-diff), not a UI card accent"
+      }
+    ]
+  }
+}

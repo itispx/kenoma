@@ -1,0 +1,151 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-08-01T00:00:00Z",
+  "title": "Design System: Kenoma",
+  "extensions": {
+    "colorMeta": {
+      "signal-mint": {
+        "role": "primary",
+        "displayName": "Signal Mint",
+        "canonical": "#51f0a8",
+        "tonalRamp": ["#0a2b1e", "#0f4230", "#155c40", "#1c7855", "#2c9e72", "#3fc48f", "#51f0a8", "#a6f8d3"]
+      },
+      "signal-peach": {
+        "role": "warning",
+        "displayName": "Signal Peach",
+        "canonical": "#ffb188",
+        "tonalRamp": ["#3a1c0e", "#5c2c16", "#7e3c1f", "#a8552c", "#c96f42", "#e88f60", "#ffb188", "#ffd6bd"]
+      },
+      "signal-lime": {
+        "role": "success",
+        "displayName": "Signal Lime",
+        "canonical": "#9effa1",
+        "tonalRamp": ["#153017", "#204b22", "#2c6830", "#3d8a41", "#57ad5c", "#78d17c", "#9effa1", "#c9ffcb"]
+      },
+      "signal-magenta": {
+        "role": "error",
+        "displayName": "Signal Magenta",
+        "canonical": "#ff78a5",
+        "tonalRamp": ["#3a0f1f", "#5c1830", "#7e2242", "#a82f58", "#c94270", "#e85c8c", "#ff78a5", "#ffb0c8"]
+      },
+      "background": {
+        "role": "neutral",
+        "displayName": "Void Black",
+        "canonical": "#000000",
+        "tonalRamp": ["#000000", "#050505", "#0a0a0a", "#1a1b1b", "#26262a", "#3b3b3b", "#6b6b6e", "#8a8a8d"]
+      },
+      "text-primary": {
+        "role": "neutral",
+        "displayName": "Primary Text",
+        "canonical": "#f4f4f5",
+        "tonalRamp": ["#6b6b6e", "#8a8a8d", "#a8a8ac", "#c4c4c8", "#d4d4d8", "#e4e4e7", "#f4f4f5", "#ffffff"]
+      }
+    },
+    "typographyMeta": {
+      "body": { "displayName": "Body / UI", "purpose": "Every heading, button, label, and paragraph in the interface chrome." },
+      "title": { "displayName": "Page Title", "purpose": "Page-level headings (e.g. dashboard 'Projects')." },
+      "title-compact": { "displayName": "Panel Title", "purpose": "Panel-level headings inside a focused single-card surface (e.g. auth flow headings) — quieter than Page Title." },
+      "label": { "displayName": "Label", "purpose": "Status badges and nav microcopy — always plain-language, never raw identifiers." },
+      "mono": { "displayName": "Data / Mono", "purpose": "Diffs, IDs, inline code — the only place monospace appears." }
+    },
+    "shadows": [
+      { "name": "panel-ambient", "value": "0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.28)", "purpose": "The one non-glow shadow; separates sticky header/panels from the void background." },
+      { "name": "glow-info", "value": "0 0 0 1px rgb(81 240 168 / 0.45), 0 0 12px 0 rgb(81 240 168 / 0.35)", "purpose": "Focus rings, hover-lift, the 'connected' status dot." },
+      { "name": "glow-warning", "value": "0 0 0 1px rgb(255 177 136 / 0.45), 0 0 12px 0 rgb(255 177 136 / 0.35)", "purpose": "Warning-state emphasis." },
+      { "name": "glow-success", "value": "0 0 0 1px rgb(158 255 161 / 0.45), 0 0 12px 0 rgb(158 255 161 / 0.35)", "purpose": "Success-state emphasis." },
+      { "name": "glow-error", "value": "0 0 0 1px rgb(255 120 165 / 0.45), 0 0 12px 0 rgb(255 120 165 / 0.35)", "purpose": "Error-state emphasis, error-focus rings." }
+    ],
+    "motion": [
+      { "name": "materialize", "value": "320ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "One-shot entrance for panels/route content: fade + slight scale/translate + brightness flash." },
+      { "name": "flicker-in", "value": "260ms steps(1, end)", "purpose": "Signal-flicker entrance, used sparingly for a 'coming online' moment." },
+      { "name": "pulse-glow", "value": "2200ms ease-in-out infinite", "purpose": "Looping glow breathing for live/active indicators (never a one-shot)." },
+      { "name": "scan-sweep-loop", "value": "1400ms linear infinite", "purpose": "Looping progress-bar sweep for indeterminate loading (boot screen)." },
+      { "name": "caret-blink", "value": "1000ms steps(1, end) infinite", "purpose": "Terminal-style caret blink, used sparingly as a single accent, not throughout the UI." },
+      { "name": "stagger-in", "value": "460ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Staggered list/line reveal with translateY, delayed per item." }
+    ],
+    "breakpoints": [
+      { "name": "md", "value": "768px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The single primary action per view.",
+      "html": "<button class=\"ds-btn ds-btn-primary\">Save changes</button>",
+      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 12px; border: 1px solid transparent; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 100ms ease-out; } .ds-btn:active { transform: translateY(1px) scale(0.97); } .ds-btn-primary { background: #51f0a8; color: #000000; } .ds-btn-primary:hover { background: rgba(81,240,168,0.8); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(81,240,168,0.5), 0 0 12px 0 rgba(81,240,168,0.35); }"
+    },
+    {
+      "name": "Outline Button",
+      "kind": "button",
+      "refersTo": "button-outline",
+      "description": "Secondary action, sits on the void background.",
+      "html": "<button class=\"ds-btn ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { background: #000000; color: #f4f4f5; border: 1px solid #26262a; } .ds-btn-outline:hover { background: #1a1b1b; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(81,240,168,0.5), 0 0 12px 0 rgba(81,240,168,0.35); }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-default",
+      "description": "Standard field: transparent fill, hairline border, mint focus glow.",
+      "html": "<input class=\"ds-input\" placeholder=\"Project name\" />",
+      "css": ".ds-input { height: 32px; width: 100%; border-radius: 12px; border: 1px solid #26262a; background: transparent; color: #f4f4f5; padding: 4px 10px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; transition: box-shadow 150ms ease-out, border-color 150ms ease-out; } .ds-input::placeholder { color: #8a8a8d; } .ds-input:focus { outline: none; border-color: #51f0a8; box-shadow: 0 0 0 2px rgba(81,240,168,0.35), 0 0 12px 0 rgba(81,240,168,0.3); }"
+    },
+    {
+      "name": "Panel",
+      "kind": "card",
+      "refersTo": "panel-default",
+      "description": "The base surface for grouped content — translucent graphite over the void, blurred, hairline border, no shadow at rest.",
+      "html": "<div class=\"ds-panel\"><div class=\"ds-panel-title\">Project overview</div><div class=\"ds-panel-body\">Panel content goes here.</div></div>",
+      "css": ".ds-panel { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(38,38,42,0.8); border-radius: 8px; padding: 16px; } .ds-panel-title { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 1rem; color: #f4f4f5; margin-bottom: 8px; } .ds-panel-body { color: #a8a8ac; font-size: 0.875rem; line-height: 1.5; }"
+    },
+    {
+      "name": "Status Badge",
+      "kind": "custom",
+      "refersTo": "status-badge",
+      "description": "Glyph + plain-language label in the matching semantic color; the canonical way any revision/document state is shown.",
+      "html": "<span class=\"ds-status ds-status-review\"><span aria-hidden=\"true\">◐</span>in review</span>",
+      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; } .ds-status-review { color: #ffb188; } .ds-status-approved { color: #9effa1; } .ds-status-rejected { color: #ff78a5; } .ds-status-draft { color: #8a8a8d; }"
+    },
+    {
+      "name": "Sidebar Nav Item",
+      "kind": "nav",
+      "refersTo": "nav-item",
+      "description": "Active state is a left-edge mint border + soft mint wash, never a filled pill; inactive nudges right on hover.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\">Projects</a>",
+      "css": ".ds-nav-item { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 8px 10px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; border-left: 2px solid transparent; color: #8a8a8d; text-decoration: none; transition: color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out; } .ds-nav-item:hover { color: #f4f4f5; background: rgba(26,27,27,0.3); transform: translateX(2px); } .ds-nav-item-active { border-left-color: #51f0a8; background: rgba(81,240,168,0.1); color: #f4f4f5; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Signal Console",
+    "overview": "Kenoma reads as a quiet, confident operations HUD — the visual language of a system monitoring something that matters, not a marketing surface and not a literal terminal emulator. The canonical theme is near-black (#000000) with soft graphite panels, thin hairline borders, and a restrained mint/peach/lime/magenta signal palette that only glows when something is genuinely happening: a focused field, a live status, a successful save. At rest, the interface is calm and precise; state changes are where the personality lives, expressed through color glow and motion rather than decoration. This is a deliberate refinement of an earlier, more literal terminal aesthetic. The system explicitly rejects CLI cosplay: no $/>/# prompt glyphs prefixing copy, no ALL-CAPS jargon in toasts or status text, no raw snake_case/enum strings surfaced to users. Monospace (JetBrains Mono) is reserved for genuinely data-shaped content — diffs, IDs, code-like fragments — and never used as the default UI voice; Space Grotesk carries every heading, button, and body string.",
+    "keyCharacteristics": [
+      "Near-black canonical theme with a light counterpart that inverts contrast while preserving the same signal hues and density.",
+      "One primary accent (mint) used sparingly; peach/lime/magenta exist purely as semantic status colors, never as decoration.",
+      "Depth conveyed through glow and blur, not drop-shadow elevation.",
+      "Precise, responsive micro-motion signals state changes rather than being ambient decoration.",
+      "Monospace is a data marker, not a brand voice."
+    ],
+    "rules": [
+      { "name": "The One Signal Rule", "body": "Only one accent (mint) is used for anything non-semantic. Peach/lime/magenta never appear except as warning/success/error.", "section": "colors" },
+      { "name": "The Light Theme Inverts, Never Drifts Rule", "body": "Light mode remaps the same neutral and signal roles onto a paper-on-graphite scheme holding the same contrast targets — it is not a separate palette.", "section": "colors" },
+      { "name": "The No Raw Identifiers Rule", "body": "Enum values and permission keys never render verbatim in UI copy — every one is mapped to a human label before display.", "section": "typography" },
+      { "name": "The Glow-Not-Lift Rule", "body": "Depth reads through color intensity and blur radius, never through a heavier drop shadow.", "section": "elevation" }
+    ],
+    "dos": [
+      "Do reserve JetBrains Mono for diffs, IDs, and code-like fragments only.",
+      "Do map every enum/status value to a plain-language label before it reaches UI copy.",
+      "Do express depth and emphasis through signal-color glow + blur, never through added drop-shadow weight.",
+      "Do keep the signal-mint accent rare — reserve it for the one primary action or focus state per view.",
+      "Do drive animation from real state changes and loop any 'waiting' animation rather than timing it to a guess."
+    ],
+    "donts": [
+      "Don't prefix headings, buttons, or toasts with $, >, #, or any literal shell-prompt glyph.",
+      "Don't write ALL-CAPS or jargon-heavy status/toast copy — use plain sentence-case, human phrasing.",
+      "Don't surface raw snake_case/enum strings directly in UI text.",
+      "Don't introduce a fifth 'decorative' accent color — peach/lime/magenta are semantic-only.",
+      "Don't reach for a heavier box-shadow to convey elevation; use glow."
+    ]
+  }
+}

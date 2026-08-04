@@ -1,0 +1,10 @@
+# Minimal image for running goose migrations standalone (`make db-up`/`db-down`).
+# Deliberately separate from Dockerfile.dev — migrations need none of that
+# image's air/pandoc/typst, so this stays small and rarely needs rebuilding.
+FROM golang:1.25-alpine
+
+RUN go install github.com/pressly/goose/v3/cmd/goose@latest
+
+WORKDIR /app
+
+ENTRYPOINT ["goose"]
