@@ -17,3 +17,5 @@ sql:
           - db_type: "uuid"
             go_type: "github.com/google/uuid.NullUUID"
             nullable: true
+          - db_type: "timestamptz"
+            go_type: "time.Time"

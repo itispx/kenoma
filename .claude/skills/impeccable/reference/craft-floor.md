@@ -12,6 +12,7 @@ Each of these is a check on the built result, not an intention. Run them togethe
 - **Type:** body measure 65–75ch, display max 6rem, tracking floor -0.04em, balanced headings, obvious scale and weight steps. Run the real copy at every breakpoint and fix what overflows.
 - **Motion:** one authored moment, not scattered effects and not one identical entrance on every section. Exponential ease-out from an already-visible default. Reach past transform and opacity: blur, backdrop-filter, clip-path, mask, and shadow belong to the palette when they stay smooth.
 - **States:** hover, disabled, loading, error, empty. Plus real content, working controls, responsive composition, keyboard focus.
+- **Reserved space:** a message that appears in response to something the user did never moves what surrounds it. Validation errors, hints, and inline status all occupy their slot in the resting layout and simply fill it when they have something to say. Check by toggling the message on: nothing below it may shift by a pixel. A field that grows when it goes invalid pushes the button out from under the cursor mid-click, and re-reading a form that just jumped costs more than the message saves.
 - **Copy:** the product's own language. Controls name their action; errors name the problem and the recovery.
 - **Coverage:** every brief requirement present and findable within seconds.
 

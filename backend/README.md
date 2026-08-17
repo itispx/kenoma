@@ -68,7 +68,7 @@ VS Code "REST Client" extension or IntelliJ's HTTP client.
 Loaded from the repo-root `.env` (not `backend/.env`) — see `../.env.example`
 for the full list with defaults/reasoning, shared with the frontend's
 `NEXT_PUBLIC_API_URL`. The required ones (no default, server refuses to start
-without them): `DATABASE_URL`, `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`.
+without them): `DATABASE_URL`, `JWT_ACCESS_SECRET`.
 
 ## Migrations
 

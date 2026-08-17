@@ -8,6 +8,8 @@ full_bin = "tmp/main"
 include_ext = ["go"]
 exclude_dir = ["tmp", "migrations", "docs"]
 delay = 200
+poll = true
+poll_interval = 500
 
 [log]
 time = false

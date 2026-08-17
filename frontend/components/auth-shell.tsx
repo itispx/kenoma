@@ -22,13 +22,17 @@ export function Field({
     <label className="flex flex-col gap-1 text-sm">
       <span className="text-xs font-medium uppercase tracking-wide text-console-300">{label}</span>
       {children}
-      {error ? (
-        <span id={errorId} role="alert" className="text-xs text-signal-error">
-          {error}
-        </span>
-      ) : (
-        hint && <span className="text-xs text-console-400">{hint}</span>
-      )}
+      {/* The message slot is always laid out, so an error appearing fills it
+          instead of pushing the rest of the form down. min-h-4 reserves
+          exactly one line of text-xs. role="alert" on the persistent element
+          means a screen reader announces the message when it arrives. */}
+      <span
+        id={errorId}
+        role="alert"
+        className={`block min-h-4 text-xs ${error ? "text-signal-error" : "text-console-400"}`}
+      >
+        {error ?? hint}
+      </span>
     </label>
   );
 }
@@ -53,6 +57,12 @@ export const inputErrorClass = inputClass
 // 10%-tint outline that read as secondary rather than primary.
 export const primaryBtn =
   "w-full rounded-lg bg-signal-info px-3 py-2.5 text-sm font-medium text-console-950 hover:bg-signal-info/80 hover:shadow-glow-info hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0";
+
+// Hairline outline on a transparent fill, per DESIGN.md's button-outline spec.
+// For a real action that isn't the screen's primary one — keeping mint reserved
+// means a secondary action can sit next to a primary without competing.
+export const secondaryBtn =
+  "w-full rounded-lg border border-console-500 bg-transparent px-3 py-2.5 text-sm font-medium text-console-100 hover:border-console-400 hover:bg-console-700/40 hover:-translate-y-0.5 active:scale-[0.98] transition-all duration-150 disabled:opacity-50 disabled:pointer-events-none disabled:hover:translate-y-0 disabled:hover:bg-transparent";
 
 // Wraps a password <input> with a show/hide toggle, so typing a new
 // password twice (register, reset-password) doesn't require clearing both
