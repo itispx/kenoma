@@ -270,6 +270,36 @@ func (s *Service) GetRevision(ctx context.Context, userID, documentID, revisionI
 	return rev, nil
 }
 
+// ExportRevision returns one immutable snapshot for download. Unlike Get,
+// which any project member may read, handing a file to the caller is the
+// one action docs:export specifically grants, so it is checked separately.
+// Any revision on main is fair game: main only ever holds approved snapshots,
+// since the draft lives on a branch and reaches main through a merged review.
+func (s *Service) ExportRevision(ctx context.Context, userID, documentID, revisionID uuid.UUID) (db.DocumentRevision, error) {
+	doc, err := s.getVisibleDoc(ctx, userID, documentID)
+	if err != nil {
+		return db.DocumentRevision{}, err
+	}
+	allowed, err := s.Checker.HasPermission(ctx, userID, doc.ProjectID, permissions.KeyExport)
+	if err != nil {
+		return db.DocumentRevision{}, err
+	}
+	if !allowed {
+		return db.DocumentRevision{}, permissions.ErrDenied
+	}
+	rev, err := s.Queries.GetDocumentRevision(ctx, db.GetDocumentRevisionParams{
+		ID:         revisionID,
+		DocumentID: documentID,
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return db.DocumentRevision{}, ErrNotFound
+		}
+		return db.DocumentRevision{}, err
+	}
+	return rev, nil
+}
+
 // DiffRevisions redlines any two snapshots of the same document against each
 // other. Diffs are computed on demand from the immutable pair, never stored,
 // so they cannot go stale.

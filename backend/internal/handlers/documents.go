@@ -1,9 +1,11 @@
 package handlers
 
 import (
+	"errors"
 	"io"
 	"net/http"
 	"path"
+	"strconv"
 	"strings"
 	"time"
 
@@ -272,6 +274,79 @@ func (s *Server) handleDiffRevisions(w http.ResponseWriter, r *http.Request) {
 
 type spansResponse struct {
 	Spans []redline.Span `json:"spans"`
+}
+
+// handleExportRevision streams one immutable revision as a docx or PDF file,
+// gated on the docs:export permission. The download lands straight on disk:
+// there is no envelope to unwrap, the bytes are the point.
+func (s *Server) handleExportRevision(w http.ResponseWriter, r *http.Request) {
+	userID, documentID, revisionID, ok := documentScopedIDs(w, r)
+	if !ok {
+		return
+	}
+	format := r.URL.Query().Get("format")
+	if format != "docx" && format != "pdf" {
+		httpx.WriteError(w, http.StatusBadRequest, "format must be docx or pdf")
+		return
+	}
+	rev, err := s.documentSvc.ExportRevision(r.Context(), userID, documentID, revisionID)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	var (
+		data        []byte
+		contentType string
+	)
+	switch format {
+	case "docx":
+		data, err = pandoc.MarkdownToDocx(s.cfg.PandocPath, []byte(rev.ContentMarkdown))
+		contentType = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+	case "pdf":
+		// An unset engine would silently fall back to pandoc's pdflatex, which
+		// no image in this project installs. Say so instead of failing deep in
+		// pandoc with a LaTeX-flavored error nobody can act on.
+		if s.cfg.PandocPDFEngine == "" {
+			httpx.WriteError(w, http.StatusServiceUnavailable,
+				"PDF export needs a PDF engine; set PANDOC_PDF_ENGINE")
+			return
+		}
+		data, err = pandoc.MarkdownToPDF(s.cfg.PandocPath, s.cfg.PandocPDFEngine, []byte(rev.ContentMarkdown))
+		contentType = "application/pdf"
+	}
+	if err != nil {
+		// Export failures are pandoc problems, but the docx-import wording in
+		// writeTenantError would misdescribe a failed PDF render.
+		switch {
+		case errors.Is(err, pandoc.ErrUnavailable):
+			httpx.WriteError(w, http.StatusServiceUnavailable, "document conversion is unavailable right now")
+		case errors.Is(err, pandoc.ErrConversion):
+			httpx.WriteError(w, http.StatusUnprocessableEntity, "could not export this revision")
+		default:
+			httpx.WriteError(w, http.StatusInternalServerError, "internal server error")
+		}
+		return
+	}
+	httpx.ServeFileAttachment(w, exportFilename(rev.Title, rev.Seq, format), contentType, data)
+}
+
+// exportFilename builds a download name the browser will show when saving:
+// "<title>-rev<seq>.docx". Characters unsafe in filenames are replaced.
+func exportFilename(title string, seq int64, format string) string {
+	clean := strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z', r >= '0' && r <= '9', r == '-', r == '_':
+			return r
+		case r == ' ':
+			return '-'
+		default:
+			return -1
+		}
+	}, strings.TrimSpace(title))
+	if clean == "" {
+		clean = "document"
+	}
+	return clean + "-rev" + strconv.FormatInt(seq, 10) + "." + format
 }
 
 // documentScopedIDs pulls both path segments of the nested revision routes.

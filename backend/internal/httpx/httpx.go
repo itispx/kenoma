@@ -6,6 +6,7 @@ import (
 	"log"
 	"mime"
 	"net/http"
+	"strconv"
 )
 
 // Every response shares one envelope shape: a status block, plus either a
@@ -59,6 +60,19 @@ func writeEnvelope(w http.ResponseWriter, code int, v any) {
 	w.WriteHeader(code)
 	if err := json.NewEncoder(w).Encode(v); err != nil {
 		log.Printf("httpx: failed to encode response: %v", err)
+	}
+}
+
+// ServeFileAttachment streams a byte payload as a file download. The browser
+// derives the suggested save name from Content-Disposition, and the handler
+// never touches the envelope JSON path.
+func ServeFileAttachment(w http.ResponseWriter, filename, contentType string, data []byte) {
+	w.Header().Set("Content-Type", contentType)
+	w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
+	w.Header().Set("Content-Length", strconv.Itoa(len(data)))
+	w.WriteHeader(http.StatusOK)
+	if _, err := w.Write(data); err != nil {
+		log.Printf("httpx: failed to write attachment: %v", err)
 	}
 }
 

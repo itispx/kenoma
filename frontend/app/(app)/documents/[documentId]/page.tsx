@@ -125,6 +125,7 @@ function DocumentView({
   const canSubmit = !loading && has("docs:submit_review");
   const canManage = !loading && has("docs:manage");
   const canApprove = !loading && has("docs:approve");
+  const canExport = !loading && has("docs:export");
 
   const initialDraft = doc.head_revision_id === null;
 
@@ -207,6 +208,39 @@ function DocumentView({
   const [reconcileTitle, setReconcileTitle] = useState("");
   const [reconcileContent, setReconcileContent] = useState("");
   const [reconcileDiff, setReconcileDiff] = useState<DiffSpan[] | null>(null);
+  // "docx" | "pdf" | null. Non-null while an export is downloading, so the
+  // two buttons can show which one is being prepared.
+  const [exporting, setExporting] = useState<"docx" | "pdf" | null>(null);
+
+  // Hands a downloaded file to the browser's save dialog, using the filename
+  // the backend chose via Content-Disposition.
+  function triggerDownload(blob: Blob, filename: string) {
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  async function exportRevision(format: "docx" | "pdf") {
+    if (!selectedRev) return;
+    setExporting(format);
+    try {
+      const { blob, filename } = await documents.revisions.export(
+        doc.id,
+        selectedRev.id,
+        format,
+      );
+      triggerDownload(blob, filename);
+    } catch {
+      toast.error("Could not export this revision.");
+    } finally {
+      setExporting(null);
+    }
+  }
 
   const refreshChangeRequests = useCallback(async () => {
     const list = await changeRequests.listForDocument(doc.id).catch(() => null);
@@ -1015,23 +1049,45 @@ function DocumentView({
               {revisions === null && <LoadingState label="Loading history…" />}
               {selectedRev && (
                 <div className="surface-panel p-gutter-lg">
-                  <div className="mb-3 flex items-center justify-between gap-3">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
                     <h2 className="text-sm font-semibold">
                       #{selectedRev.seq} · {selectedRev.title}
                     </h2>
-                    {revDiff !== null && revDiff.length > 0 && (
-                      <label className="flex cursor-pointer items-center gap-2 text-xs text-console-300">
-                        <input
-                          type="checkbox"
-                          checked={showRedline}
-                          onChange={(e) => setShowRedline(e.target.checked)}
-                          // The browser's default checkbox ships in its own
-                          // palette; accent-color hands it back to the console.
-                          className="h-3.5 w-3.5 accent-signal-info"
-                        />
-                        Redline vs previous
-                      </label>
-                    )}
+                    <div className="flex items-center gap-3">
+                      {revDiff !== null && revDiff.length > 0 && (
+                        <label className="flex cursor-pointer items-center gap-2 text-xs text-console-300">
+                          <input
+                            type="checkbox"
+                            checked={showRedline}
+                            onChange={(e) => setShowRedline(e.target.checked)}
+                            // The browser's default checkbox ships in its own
+                            // palette; accent-color hands it back to the console.
+                            className="h-3.5 w-3.5 accent-signal-info"
+                          />
+                          Redline vs previous
+                        </label>
+                      )}
+                      {canExport && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={exporting !== null}
+                            onClick={() => void exportRevision("docx")}
+                            className="focus-console rounded-sm border border-console-600 px-2 py-1 text-xs font-semibold text-console-100 hover:border-console-400 disabled:opacity-40"
+                          >
+                            {exporting === "docx" ? "Exporting…" : "Export .docx"}
+                          </button>
+                          <button
+                            type="button"
+                            disabled={exporting !== null}
+                            onClick={() => void exportRevision("pdf")}
+                            className="focus-console rounded-sm border border-console-600 px-2 py-1 text-xs font-semibold text-console-100 hover:border-console-400 disabled:opacity-40"
+                          >
+                            {exporting === "pdf" ? "Exporting…" : "Export .pdf"}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   {showRedline && revDiff ? (
                     <DiffView

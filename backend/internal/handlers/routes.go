@@ -89,6 +89,9 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /api/v1/documents/{documentId}/revisions", s.authed(s.handleListRevisions))
 	s.mux.HandleFunc("GET /api/v1/documents/{documentId}/revisions/{revisionId}", s.authed(s.handleGetRevision))
 	s.mux.HandleFunc("GET /api/v1/documents/{documentId}/diff", s.authed(s.handleDiffRevisions))
+	// Export one approved snapshot as a file. Gated on docs:export; format is
+	// chosen per request (?format=docx|pdf) so the route stays a single line.
+	s.mux.HandleFunc("GET /api/v1/documents/{documentId}/revisions/{revisionId}/export", s.authed(s.handleExportRevision))
 
 	// --- Change Requests ---
 	s.mux.HandleFunc("POST /api/v1/documents/{documentId}/change-requests", s.authed(s.handleOpenChangeRequest))

@@ -167,6 +167,43 @@ async function requestForm<T>(
   return parsed.data as T;
 }
 
+// download fetches a binary payload (revision exports) and returns it as a
+// Blob plus the filename the server suggested via Content-Disposition. Same
+// auth header and one-retry-on-401 behavior as request(), but no JSON
+// envelope: the file is the whole response.
+async function download(
+  path: string,
+): Promise<{ blob: Blob; filename: string }> {
+  const headers = new Headers();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    headers,
+    credentials: "include",
+  });
+  if (res.status === 401) {
+    const refreshed = await rawRefresh();
+    if (refreshed) {
+      return download(path);
+    }
+    accessToken = null;
+    emitUnauthenticated();
+    throw new ApiError(401, "session expired");
+  }
+  if (!res.ok) {
+    // The backend still speaks the JSON envelope for failures, even on the
+    // download route, so parse it for the message rather than guessing.
+    const parsed = (await res.json().catch(() => null)) as ApiEnvelope<never> | null;
+    throw new ApiError(res.status, parsed?.error?.message ?? res.statusText);
+  }
+  const blob = await res.blob();
+  const match = /filename="([^"]+)"/.exec(
+    res.headers.get("content-disposition") ?? "",
+  );
+  return { blob, filename: match?.[1] ?? "document" };
+}
+
 // --- Auth ------------------------------------------------------------------
 
 export const auth = {
@@ -297,6 +334,10 @@ export const documents = {
     diff: (documentId: string, fromRevisionId: string, toRevisionId: string) =>
       requestSpans(
         `/documents/${q(documentId)}/diff?from=${q(fromRevisionId)}&to=${q(toRevisionId)}`,
+      ),
+    export: (documentId: string, revisionId: string, format: "docx" | "pdf") =>
+      download(
+        `/documents/${q(documentId)}/revisions/${q(revisionId)}/export?format=${format}`,
       ),
   },
 };
