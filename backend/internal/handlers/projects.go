@@ -82,21 +82,29 @@ func writeTenantError(w http.ResponseWriter, err error) {
 }
 
 type projectResponse struct {
-	ID             string `json:"id"`
-	OrganizationID string `json:"organization_id"`
-	Name           string `json:"name"`
-	CreatedBy      string `json:"created_by"`
-	CreatedAt      string `json:"created_at"`
+	ID             string  `json:"id"`
+	OrganizationID string  `json:"organization_id"`
+	Name           string  `json:"name"`
+	CreatedBy      string  `json:"created_by"`
+	CreatedAt      string  `json:"created_at"`
+	DeletedAt      *string `json:"deleted_at,omitempty"`
 }
 
 func toProjectResponse(p db.Project) projectResponse {
-	return projectResponse{
+	resp := projectResponse{
 		ID:             p.ID.String(),
 		OrganizationID: p.OrganizationID.String(),
 		Name:           p.Name,
 		CreatedBy:      p.CreatedBy.String(),
 		CreatedAt:      p.CreatedAt.Format(time.RFC3339),
 	}
+	// Only the deleted listing carries a timestamp; live projects omit the
+	// field entirely rather than sending a null.
+	if p.DeletedAt.Valid {
+		value := p.DeletedAt.Time.Format(time.RFC3339)
+		resp.DeletedAt = &value
+	}
+	return resp
 }
 
 type createProjectRequest struct {
@@ -193,6 +201,23 @@ func (s *Server) handleRestoreProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	httpx.WriteStatus(w, http.StatusNoContent)
+}
+
+func (s *Server) handleListDeletedProjects(w http.ResponseWriter, r *http.Request) {
+	userID, orgID, ok := callerAndPathID(w, r, "orgId")
+	if !ok {
+		return
+	}
+	rows, err := s.projectSvc.ListDeletedForOrg(r.Context(), userID, orgID)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	out := make([]projectResponse, 0, len(rows))
+	for _, p := range rows {
+		out = append(out, toProjectResponse(p))
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
 }
 
 func (s *Server) handleMyProjectPermissions(w http.ResponseWriter, r *http.Request) {

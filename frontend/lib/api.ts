@@ -277,6 +277,9 @@ export const orgs = {
 };
 export const projects = {
   listForOrg: (id: string) => request<Project[]>(`/orgs/${q(id)}/projects`),
+  // Soft-deleted projects, for org admins restoring one that was taken out.
+  listDeletedForOrg: (id: string) =>
+    request<Project[]>(`/orgs/${q(id)}/projects/deleted`),
   create: (id: string, name: string) =>
     request<Project>(`/orgs/${q(id)}/projects`, {
       method: "POST",

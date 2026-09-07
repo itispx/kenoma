@@ -57,6 +57,7 @@ export interface Project {
   name: string;
   created_by: string;
   created_at: string;
+  deleted_at?: string;
 }
 export interface Permission {
   key: PermissionKey;

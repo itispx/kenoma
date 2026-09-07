@@ -192,8 +192,8 @@ export default function ProjectSettingsPage({
             <h2 className="text-sm font-medium text-console-50">Danger zone</h2>
             <p className="mt-1 text-sm text-console-300">
               Deleting takes the project and its documents out of the
-              organization. Nothing is erased: an organization admin can restore
-              it.
+              organization. Nothing is erased: an organization admin can
+              restore it from the organization&rsquo;s project list.
             </p>
           </div>
           <ConfirmDialog

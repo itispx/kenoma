@@ -72,6 +72,9 @@ func (s *Server) registerRoutes() {
 	// --- Projects ---
 	s.mux.HandleFunc("GET /api/v1/orgs/{orgId}/projects", s.authed(s.handleListProjects))
 	s.mux.HandleFunc("POST /api/v1/orgs/{orgId}/projects", s.authed(s.handleCreateProject))
+	// Deleted projects, for org admins restoring one that was taken out. A
+	// separate path keeps the ordinary list cheap and unambiguous.
+	s.mux.HandleFunc("GET /api/v1/orgs/{orgId}/projects/deleted", s.authed(s.handleListDeletedProjects))
 	s.mux.HandleFunc("GET /api/v1/projects/{projectId}", s.authed(s.handleGetProject))
 	s.mux.HandleFunc("PATCH /api/v1/projects/{projectId}", s.authed(s.handleRenameProject))
 	s.mux.HandleFunc("DELETE /api/v1/projects/{projectId}", s.authed(s.handleDeleteProject))

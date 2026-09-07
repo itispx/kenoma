@@ -140,3 +140,17 @@ Authorization: Bearer {{token}}
 # confirm the id exists.
 GET {{host}}/documents/{{documentId}}
 Authorization: Bearer paste a second user's access token
+
+# --- Project deletion & restore ----------------------------------------------
+
+### Soft-delete the project. Expect 204, and it leaves the org's list
+DELETE {{host}}/projects/{{projectId}}
+Authorization: Bearer {{token}}
+
+### List the org's deleted projects (the one above, with deleted_at)
+GET {{host}}/orgs/{{orgId}}/projects/deleted
+Authorization: Bearer {{token}}
+
+### Restore. Expect 204, and it comes back
+POST {{host}}/projects/{{projectId}}/restore
+Authorization: Bearer {{token}}

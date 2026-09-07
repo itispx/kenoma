@@ -133,6 +133,43 @@ func (q *Queries) ListProjectsForUserInOrg(ctx context.Context, arg ListProjects
 	return items, nil
 }
 
+const listDeletedProjectsForOrg = `-- name: ListDeletedProjectsForOrg :many
+SELECT id, organization_id, name, created_by, created_at, updated_at, deleted_at
+FROM project
+WHERE organization_id = $1 AND deleted_at IS NOT NULL
+ORDER BY deleted_at DESC
+`
+
+// Org admins see every project the org has taken out, so they can find and
+// restore one. Nobody else can see deleted projects at all.
+func (q *Queries) ListDeletedProjectsForOrg(ctx context.Context, organizationID uuid.UUID) ([]Project, error) {
+	rows, err := q.db.Query(ctx, listDeletedProjectsForOrg, organizationID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Project{}
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.ID,
+			&i.OrganizationID,
+			&i.Name,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const restoreProject = `-- name: RestoreProject :exec
 UPDATE project
 SET deleted_at = NULL, updated_at = now()

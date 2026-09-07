@@ -32,6 +32,16 @@ WHERE p.organization_id = $1
   )
 ORDER BY p.created_at DESC;
 
+-- Org admins see every project the org has taken out, so they can find and
+-- restore one. Nobody else can see deleted projects at all — membership alone
+-- conveys no visibility, and the restore path that feeds off this list is
+-- admin-only too.
+-- name: ListDeletedProjectsForOrg :many
+SELECT *
+FROM project
+WHERE organization_id = $1 AND deleted_at IS NOT NULL
+ORDER BY deleted_at DESC;
+
 -- name: UpdateProjectName :one
 UPDATE project
 SET name = $2, updated_at = now()

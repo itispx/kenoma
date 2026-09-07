@@ -149,6 +149,22 @@ func (s *Service) Restore(ctx context.Context, userID, projectID uuid.UUID) erro
 	return s.Queries.RestoreProject(ctx, projectID)
 }
 
+// ListDeletedForOrg returns the org's soft-deleted projects so an admin can
+// find and restore one that was taken out. Seeing the deleted list is itself
+// an admin act: it names projects the rest of the org no longer sees, and the
+// restore path it feeds authorizes the same way (the checker denies everything
+// on a soft-deleted project, so it cannot gate this listing either).
+func (s *Service) ListDeletedForOrg(ctx context.Context, userID, orgID uuid.UUID) ([]db.Project, error) {
+	isAdmin, err := s.Checker.IsOrgAdmin(ctx, userID, orgID)
+	if err != nil {
+		return nil, err
+	}
+	if !isAdmin {
+		return nil, permissions.ErrDenied
+	}
+	return s.Queries.ListDeletedProjectsForOrg(ctx, orgID)
+}
+
 // MyPermissions reports what the caller can do, so the UI can hide controls
 // it would only be denied on. It is never the enforcement point.
 func (s *Service) MyPermissions(ctx context.Context, userID, projectID uuid.UUID) ([]string, error) {
