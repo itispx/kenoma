@@ -26,7 +26,10 @@ function ResetPasswordForm() {
 
   if (!token) {
     return (
-      <AuthShell title="Invalid reset link" subtitle="This link is missing its token.">
+      <AuthShell
+        title="Invalid reset link"
+        subtitle="This link is missing its token."
+      >
         <div className="animate-stagger-in flex flex-col items-center gap-3 py-2 text-center">
           <XCircle className="h-8 w-8 text-signal-error" />
           <p className="text-sm text-signal-error">
@@ -42,10 +45,15 @@ function ResetPasswordForm() {
 
   if (done) {
     return (
-      <AuthShell title="Password updated" subtitle="Every device has been signed out for your security.">
+      <AuthShell
+        title="Password updated"
+        subtitle="Every device has been signed out for your security."
+      >
         <div className="animate-stagger-in flex flex-col items-center gap-3 py-2 text-center">
           <CheckCircle2 className="h-8 w-8 text-signal-success" />
-          <p className="text-sm text-console-200">Sign in with your new password to continue.</p>
+          <p className="text-sm text-console-200">
+            Sign in with your new password to continue.
+          </p>
         </div>
         <p className="mt-4 text-center text-sm text-console-400">
           <AuthLink href="/login">Go to sign in</AuthLink>
@@ -81,12 +89,19 @@ function ResetPasswordForm() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 400) {
         toast.error("This reset link has expired", {
-          description: "Reset links are only valid for an hour. Request a fresh one.",
-          action: { label: "Request new link", onClick: () => router.push("/forgot-password") },
+          description:
+            "Reset links are only valid for an hour. Request a fresh one.",
+          action: {
+            label: "Request new link",
+            onClick: () => router.push("/forgot-password"),
+          },
         });
       } else {
         toast.error("Couldn't reset your password", {
-          description: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+          description:
+            err instanceof ApiError
+              ? err.message
+              : "Something went wrong. Please try again.",
         });
       }
     } finally {
@@ -95,7 +110,10 @@ function ResetPasswordForm() {
   }
 
   return (
-    <AuthShell title="Choose a new password" subtitle="Pick something you haven't used here before.">
+    <AuthShell
+      title="Choose a new password"
+      subtitle="Pick something you haven't used here before."
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <Field
           label="New password"
@@ -112,11 +130,17 @@ function ResetPasswordForm() {
             onChange={(e) => setPassword(e.target.value)}
             onBlur={() => setPasswordTouched(true)}
             aria-invalid={!!passwordError}
-            aria-describedby={passwordError ? "reset-password-error" : undefined}
+            aria-describedby={
+              passwordError ? "reset-password-error" : undefined
+            }
             hasError={!!passwordError}
           />
         </Field>
-        <Field label="Confirm password" error={confirmError} errorId="reset-confirm-error">
+        <Field
+          label="Confirm password"
+          error={confirmError}
+          errorId="reset-confirm-error"
+        >
           <PasswordField
             required
             minLength={8}

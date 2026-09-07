@@ -9,11 +9,12 @@ import (
 	authsvc "github.com/kenoma/backend/internal/services/auth"
 )
 
-// authPathPrefix is both the route prefix for every auth endpoint and the
-// refresh cookie's Path. The two must agree: scoping the cookie narrower than
-// the routes would stop refresh from working, wider would send it to
-// unrelated endpoints. Declaring it once is what keeps them in step.
-const authPathPrefix = "/api/v1/auth"
+// refreshCookiePath scopes the refresh cookie to the auth endpoints, so it is
+// never sent to unrelated routes. It must match the auth route paths in
+// routes.go: narrower and refresh stops working, wider and the cookie leaks
+// to endpoints that have no use for it. Nothing enforces that, so change both
+// together.
+const refreshCookiePath = "/api/v1/auth"
 
 const refreshCookieName = "refresh_token"
 
@@ -56,7 +57,7 @@ func (s *Server) refreshCookie(value string) *http.Cookie {
 	return &http.Cookie{
 		Name:     refreshCookieName,
 		Value:    value,
-		Path:     authPathPrefix,
+		Path:     refreshCookiePath,
 		HttpOnly: true,
 		Secure:   s.cfg.CookieSecure,
 		SameSite: http.SameSiteLaxMode,
@@ -124,6 +125,14 @@ func writeAuthError(w http.ResponseWriter, err error) {
 // it cannot. Handlers return immediately when it reports false.
 func decodeBody(w http.ResponseWriter, r *http.Request, dst any) bool {
 	if err := httpx.DecodeJSON(r, dst); err != nil {
+		httpx.WriteError(w, http.StatusBadRequest, "invalid request body")
+		return false
+	}
+	return true
+}
+
+func decodeBodyLimit(w http.ResponseWriter, r *http.Request, dst any, maxBytes int64) bool {
+	if err := httpx.DecodeJSONLimit(r, dst, maxBytes); err != nil {
 		httpx.WriteError(w, http.StatusBadRequest, "invalid request body")
 		return false
 	}

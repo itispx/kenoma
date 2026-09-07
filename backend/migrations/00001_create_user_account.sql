@@ -10,8 +10,6 @@ CREATE TABLE user_account (
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
--- Case-insensitive: signup and login both look email up via lower(email), so
--- Foo@x.com and foo@x.com must not be able to coexist as separate accounts.
 CREATE UNIQUE INDEX user_account_email_lower_idx ON user_account (lower(email));
 
 -- +goose Down

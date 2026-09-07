@@ -161,20 +161,6 @@ t('items', { count }) // Handles complex plural rules
 - Suggest corrections
 - Don't block submission unnecessarily
 - Preserve user input on error
-- **Reserve the space before the error exists** — the slot is part of the resting layout, so showing a message fills it instead of pushing the rest of the form down
-
-```jsx
-// Wrong: the field grows when it goes invalid, shifting everything below.
-{error && <span className="text-xs text-signal-error">{error}</span>}
-
-// Right: the slot is always laid out; only its contents change.
-// min-h reserves exactly one line so the form never reflows.
-<span className="block min-h-4 text-xs" role="alert" aria-live="polite">
-  {error ? <span className="text-signal-error">{error}</span> : hint}
-</span>
-```
-
-Applies to any message that appears in response to user action, not just validation: inline status, character counters, async availability checks. Verify by toggling the message on and confirming nothing below it moves. `aria-live` matters as much as the reserved space — a message that appears silently to a screen reader is still a missed error.
 
 **API errors**:
 - Handle each status code appropriately

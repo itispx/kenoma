@@ -18,6 +18,12 @@ import (
 	"github.com/kenoma/backend/internal/email"
 	"github.com/kenoma/backend/internal/handlers"
 	authsvc "github.com/kenoma/backend/internal/services/auth"
+	"github.com/kenoma/backend/internal/services/crs"
+	"github.com/kenoma/backend/internal/services/documents"
+	"github.com/kenoma/backend/internal/services/orgs"
+	"github.com/kenoma/backend/internal/services/permissions"
+	"github.com/kenoma/backend/internal/services/projects"
+	"github.com/kenoma/backend/internal/services/workstreams"
 )
 
 // How often expired tokens are purged. Independent of request traffic, so the
@@ -50,12 +56,20 @@ func main() {
 		sender = email.NewResendSender(cfg.ResendAPIKey, cfg.EmailFromAddress)
 	}
 
-	authSvc := authsvc.New(db.New(pool), sender, cfg)
-	srv := handlers.NewServer(cfg, pool, authSvc)
+	queries := db.New(pool)
+	checker := permissions.New(queries)
+	authSvc := authsvc.New(queries, pool, sender, cfg)
+	orgSvc := orgs.New(queries, checker, sender, cfg)
+	projectSvc := projects.New(queries, checker)
+	documentSvc := documents.New(queries, pool, checker)
+	crSvc := crs.New(queries, pool, checker)
+	workstreamSvc := workstreams.New(queries, pool, checker)
+
+	srv := handlers.NewServer(cfg, pool, authSvc, orgSvc, projectSvc, documentSvc, crSvc, workstreamSvc)
 
 	purgeCtx, stopPurge := context.WithCancel(ctx)
 	defer stopPurge()
-	go runTokenPurge(purgeCtx, authSvc)
+	go runTokenPurge(purgeCtx, authSvc, orgSvc)
 
 	httpServer := &http.Server{
 		Addr:              ":" + cfg.Port,
@@ -88,19 +102,31 @@ func main() {
 	log.Println("server exited cleanly")
 }
 
-// runTokenPurge deletes long-expired tokens on a fixed interval until ctx is
-// cancelled. It runs once at startup so a deploy does not wait a full interval
-// before the first pass.
-func runTokenPurge(ctx context.Context, svc *authsvc.Service) {
+// runTokenPurge deletes long-expired tokens and invitations on a fixed
+// interval until ctx is cancelled. It runs once at startup so a deploy does
+// not wait a full interval before the first pass.
+func runTokenPurge(ctx context.Context, authSvc *authsvc.Service, orgSvc *orgs.Service) {
 	purge := func() {
-		rows, err := svc.PurgeExpiredTokens(ctx, time.Now().Add(-authsvc.TokenRetention))
+		before := time.Now().Add(-authsvc.TokenRetention)
+
+		total, err := authSvc.PurgeExpiredTokens(ctx, before)
 		if err != nil {
 			// Non-fatal: the tables grow a little until the next pass.
 			log.Printf("token purge failed: %v", err)
 			return
 		}
-		if rows > 0 {
-			log.Printf("token purge: deleted %d expired rows", rows)
+
+		// Invitations live in the orgs service, so they are purged alongside
+		// rather than reaching across from auth into another service's tables.
+		invites, err := orgSvc.PurgeExpiredInvitations(ctx, before)
+		if err != nil {
+			log.Printf("invitation purge failed: %v", err)
+			return
+		}
+		total += invites
+
+		if total > 0 {
+			log.Printf("purge: deleted %d expired rows", total)
 		}
 	}
 

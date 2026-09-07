@@ -12,8 +12,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	db "github.com/kenoma/backend/db/sqlc"
 	authpkg "github.com/kenoma/backend/internal/auth"
@@ -33,12 +35,16 @@ const minPasswordLength = 8
 
 type Service struct {
 	Queries db.Querier
-	Sender  email.Sender
-	Cfg     *config.Config
+	// Pool is needed only by Register, which spans several inserts that must
+	// land together. Everything else is a single statement and goes through
+	// Queries.
+	Pool   *pgxpool.Pool
+	Sender email.Sender
+	Cfg    *config.Config
 }
 
-func New(queries db.Querier, sender email.Sender, cfg *config.Config) *Service {
-	return &Service{Queries: queries, Sender: sender, Cfg: cfg}
+func New(queries db.Querier, pool *pgxpool.Pool, sender email.Sender, cfg *config.Config) *Service {
+	return &Service{Queries: queries, Pool: pool, Sender: sender, Cfg: cfg}
 }
 
 // Session is what a handler needs to build an AuthResponse and set the
@@ -70,7 +76,9 @@ func validatePassword(pw string) error {
 	return nil
 }
 
-func (s *Service) issueSession(ctx context.Context, user db.UserAccount) (Session, error) {
+// issueSession takes the querier explicitly so registration can mint the
+// session inside its transaction while every other caller passes s.Queries.
+func (s *Service) issueSession(ctx context.Context, q db.Querier, user db.UserAccount) (Session, error) {
 	accessToken, accessExpiresAt, err := authpkg.IssueAccessToken(user.ID, user.Email, s.Cfg.JWTAccessSecret, s.Cfg.AccessTokenTTL)
 	if err != nil {
 		return Session{}, err
@@ -81,7 +89,7 @@ func (s *Service) issueSession(ctx context.Context, user db.UserAccount) (Sessio
 		return Session{}, err
 	}
 	refreshExpiresAt := time.Now().Add(s.Cfg.RefreshTokenTTL)
-	if _, err := s.Queries.CreateRefreshToken(ctx, db.CreateRefreshTokenParams{
+	if _, err := q.CreateRefreshToken(ctx, db.CreateRefreshTokenParams{
 		UserID:    user.ID,
 		TokenHash: authpkg.HashToken(rawRefresh),
 		ExpiresAt: refreshExpiresAt,
@@ -98,6 +106,14 @@ func (s *Service) issueSession(ctx context.Context, user db.UserAccount) (Sessio
 	}, nil
 }
 
+// Register creates the account, its personal organization, the admin
+// membership for it, and the first session as one atomic unit. A user without
+// a personal organization could sign in and reach nothing, so a partial
+// success here is worse than a failure.
+//
+// Any pending invitations addressed to this email are also accepted inside
+// the same transaction, so someone invited before they had an account lands
+// already inside the organization that invited them.
 func (s *Service) Register(ctx context.Context, rawEmail, password, name string) (Session, error) {
 	emailAddr, err := validateEmail(rawEmail)
 	if err != nil {
@@ -116,7 +132,16 @@ func (s *Service) Register(ctx context.Context, rawEmail, password, name string)
 		return Session{}, err
 	}
 
-	user, err := s.Queries.CreateUser(ctx, db.CreateUserParams{
+	tx, err := s.Pool.Begin(ctx)
+	if err != nil {
+		return Session{}, err
+	}
+	// No-op once Commit succeeds; on any early return it undoes everything.
+	defer func() { _ = tx.Rollback(ctx) }()
+
+	q := db.New(tx)
+
+	user, err := q.CreateUser(ctx, db.CreateUserParams{
 		Email:        emailAddr,
 		PasswordHash: hash,
 		Name:         name,
@@ -129,7 +154,66 @@ func (s *Service) Register(ctx context.Context, rawEmail, password, name string)
 		return Session{}, err
 	}
 
-	return s.issueSession(ctx, user)
+	org, err := q.CreateOrganization(ctx, db.CreateOrganizationParams{
+		Name:       user.Name,
+		IsPersonal: true,
+		CreatedBy:  user.ID,
+	})
+	if err != nil {
+		return Session{}, fmt.Errorf("create personal organization: %w", err)
+	}
+	if _, err := q.CreateOrganizationMember(ctx, db.CreateOrganizationMemberParams{
+		OrganizationID: org.ID,
+		UserID:         user.ID,
+		Role:           "admin",
+	}); err != nil {
+		return Session{}, fmt.Errorf("create personal membership: %w", err)
+	}
+
+	if err := acceptPendingInvitations(ctx, q, user); err != nil {
+		return Session{}, err
+	}
+
+	sess, err := s.issueSession(ctx, q, user)
+	if err != nil {
+		return Session{}, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return Session{}, err
+	}
+	return sess, nil
+}
+
+// acceptPendingInvitations joins the new user to every organization that
+// invited this address before they had an account. A duplicate membership is
+// ignored rather than failing registration, since the only way to hit it is
+// two live invitations for the same org, which the partial unique index
+// already prevents.
+func acceptPendingInvitations(ctx context.Context, q db.Querier, user db.UserAccount) error {
+	invites, err := q.ListPendingInvitationsForEmail(ctx, user.Email)
+	if err != nil {
+		return fmt.Errorf("list pending invitations: %w", err)
+	}
+	for _, inv := range invites {
+		_, err := q.CreateOrganizationMember(ctx, db.CreateOrganizationMemberParams{
+			OrganizationID: inv.OrganizationID,
+			UserID:         user.ID,
+			Role:           inv.Role,
+			InvitedBy:      uuid.NullUUID{UUID: inv.InvitedBy, Valid: true},
+		})
+		if err != nil {
+			var pgErr *pgconn.PgError
+			if errors.As(err, &pgErr) && pgErr.Code == "23505" {
+				continue
+			}
+			return fmt.Errorf("accept invitation: %w", err)
+		}
+		if err := q.MarkInvitationAccepted(ctx, inv.ID); err != nil {
+			return fmt.Errorf("mark invitation accepted: %w", err)
+		}
+	}
+	return nil
 }
 
 func (s *Service) Login(ctx context.Context, rawEmail, password string) (Session, error) {
@@ -153,7 +237,7 @@ func (s *Service) Login(ctx context.Context, rawEmail, password string) (Session
 		return Session{}, ErrInvalidCredentials
 	}
 
-	return s.issueSession(ctx, user)
+	return s.issueSession(ctx, s.Queries, user)
 }
 
 // Refresh rotates the presented refresh token. If the token has already
@@ -193,7 +277,7 @@ func (s *Service) Refresh(ctx context.Context, rawRefreshToken string) (Session,
 		return Session{}, err
 	}
 
-	return s.issueSession(ctx, user)
+	return s.issueSession(ctx, s.Queries, user)
 }
 
 // Logout revokes the presented refresh token. Always succeeds — an

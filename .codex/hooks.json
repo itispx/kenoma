@@ -1,0 +1,18 @@
+{
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|apply_patch",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "[ ! -f 'C:\\Users\\Guilh\\.agents\\skills\\impeccable\\scripts\\hook.mjs' ] || node 'C:\\Users\\Guilh\\.agents\\skills\\impeccable\\scripts\\hook.mjs'",
+            "timeout": 5,
+            "statusMessage": "Checking UI changes",
+            "commandWindows": "if exist \"C:\\\\Users\\\\Guilh\\\\.agents\\\\skills\\\\impeccable\\\\scripts\\\\hook.mjs\" (node \"C:\\\\Users\\\\Guilh\\\\.agents\\\\skills\\\\impeccable\\\\scripts\\\\hook.mjs\" & exit /b)"
+          }
+        ]
+      }
+    ]
+  }
+}

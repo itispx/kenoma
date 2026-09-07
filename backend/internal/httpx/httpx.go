@@ -72,12 +72,21 @@ func writeEnvelope(w http.ResponseWriter, code int, v any) {
 // otherwise parse here happily. Requiring application/json forces any
 // attacker into a preflighted request, which CORS then blocks.
 func DecodeJSON(r *http.Request, dst any) error {
+	return DecodeJSONLimit(r, dst, 1<<20)
+}
+
+// DecodeJSONLimit is DecodeJSON with an explicit body cap, for the routes whose
+// payload is a document body rather than a handful of fields. Those set the cap
+// above their own content limit so the size rule is enforced by the service,
+// with a message that says what went wrong, rather than by the reader cutting
+// the stream off mid-parse.
+func DecodeJSONLimit(r *http.Request, dst any, maxBytes int64) error {
 	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil || mediaType != "application/json" {
 		return fmt.Errorf("Content-Type must be application/json")
 	}
 
-	r.Body = http.MaxBytesReader(nil, r.Body, 1<<20) // 1MB cap
+	r.Body = http.MaxBytesReader(nil, r.Body, maxBytes)
 
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()

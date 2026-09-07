@@ -38,6 +38,11 @@
   --signal-success: #7efe8f;
   --signal-error: #f54a88;
 
+  /* Ink for content sitting on a signal fill. The signal hues are light in
+     both themes, so this stays near-black in both — unlike console-950,
+     which inverts and would put near-white on mint here. */
+  --ink-on-signal: #0a0a0a;
+
   --radius: 4px;
 
   /* shadcn semantic aliases -> console scale */
@@ -61,34 +66,32 @@
   --input: var(--console-600);
   --ring: var(--signal-info);
 
-  --scanlines-image: repeating-linear-gradient(
-    to bottom,
-    rgba(0, 0, 0, 0.03) 0px,
-    rgba(0, 0, 0, 0.03) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  --grid-image: linear-gradient(to right, rgba(100, 100, 100, 0.07) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(100, 100, 100, 0.07) 1px, transparent 1px);
-  --shadow-panel: 0 1px 2px rgba(10, 10, 10, 0.08), 0 4px 16px rgba(10, 10, 10, 0.06);
+  --shadow-panel:
+    0 1px 2px rgba(10, 10, 10, 0.08), 0 4px 16px rgba(10, 10, 10, 0.06);
 }
 
 .dark {
-  /* console neutral scale — dark (canonical; Mint Signal palette) */
-  --console-50: #f4f4f5;
+  /* console neutral scale — dark (canonical; Mint Signal palette)
+
+     The low end sits just off absolute black rather than on it. #f4f4f5 over
+     #000000 is ~19.6:1, past the point where light-on-dark text haloes, and on
+     a subpixel-rendering display pure black also picks up colour fringing on
+     the stems — together they read as the type shimmering. Body text now lands
+     around 15:1: still far above AA, without the bloom. */
+  --console-50: #e8e8ea;
   --console-100: #d4d4d8;
   --console-200: #a8a8ac;
   --console-300: #8a8a8d;
-  /* Lightened from #6b6b6e: that value contrasts only ~3.96:1 against the
-     near-black console-950 background, below WCAG AA's 4.5:1 floor for the
-     hint/secondary-link text it's used for. #7d7d80 clears ~5.1:1. */
-  --console-400: #7d7d80;
-  --console-500: #3b3b3b;
-  --console-600: #26262a;
-  --console-700: #1a1b1b;
-  --console-800: #0a0a0a;
-  --console-900: #050505;
-  --console-950: #000000;
+  /* Kept above WCAG AA's 4.5:1 floor for the hint/secondary text it carries.
+     Raising the surfaces below cost some ratio, so this rose with them:
+     #86868a clears ~5.0:1 on the panel and ~5.3:1 on the page. */
+  --console-400: #86868a;
+  --console-500: #3f3f45;
+  --console-600: #2b2b30;
+  --console-700: #1e1e21;
+  --console-800: #141416;
+  --console-900: #101012;
+  --console-950: #0b0b0d;
 
   /* signal hues — dark (mint primary, peach warning, lime success, magenta
      error — glow-friendly on near-black) */
@@ -96,6 +99,8 @@
   --signal-warning: #ffb188;
   --signal-success: #9effa1;
   --signal-error: #ff78a5;
+
+  --ink-on-signal: #000000;
 
   --background: var(--console-950);
   --foreground: var(--console-50);
@@ -117,15 +122,6 @@
   --input: var(--console-600);
   --ring: var(--signal-info);
 
-  --scanlines-image: repeating-linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.025) 0px,
-    rgba(255, 255, 255, 0.025) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  --grid-image: linear-gradient(to right, rgba(150, 150, 150, 0.06) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(150, 150, 150, 0.06) 1px, transparent 1px);
   --shadow-panel: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 16px rgba(0, 0, 0, 0.28);
 }
 
@@ -152,6 +148,7 @@
   --color-signal-warning: var(--signal-warning);
   --color-signal-success: var(--signal-success);
   --color-signal-error: var(--signal-error);
+  --color-ink-on-signal: var(--ink-on-signal);
 
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -206,6 +203,7 @@
   --animate-caret-blink: caret-blink 1000ms steps(1, end) infinite;
   --animate-stagger-in: stagger-in 460ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-float: float 6000ms ease-in-out infinite;
+  --animate-ignite: ignite 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 @keyframes materialize {
@@ -224,27 +222,53 @@
   }
 }
 @keyframes flicker-in {
-  0%, 100% { opacity: 1; }
-  8% { opacity: 0.2; }
-  16% { opacity: 1; }
-  22% { opacity: 0.4; }
-  30% { opacity: 1; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  8% {
+    opacity: 0.2;
+  }
+  16% {
+    opacity: 1;
+  }
+  22% {
+    opacity: 0.4;
+  }
+  30% {
+    opacity: 1;
+  }
 }
 @keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 1px rgb(81 240 168 / 0.35), 0 0 8px 0 rgb(81 240 168 / 0.25);
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 1px rgb(81 240 168 / 0.35),
+      0 0 8px 0 rgb(81 240 168 / 0.25);
   }
   50% {
-    box-shadow: 0 0 0 1px rgb(81 240 168 / 0.55), 0 0 16px 2px rgb(81 240 168 / 0.4);
+    box-shadow:
+      0 0 0 1px rgb(81 240 168 / 0.55),
+      0 0 16px 2px rgb(81 240 168 / 0.4);
   }
 }
 @keyframes scan-sweep {
-  0% { background-position: -150% 0; }
-  100% { background-position: 150% 0; }
+  0% {
+    background-position: -150% 0;
+  }
+  100% {
+    background-position: 150% 0;
+  }
 }
 @keyframes caret-blink {
-  0%, 49% { opacity: 1; }
-  50%, 100% { opacity: 0; }
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
 }
 @keyframes stagger-in {
   0% {
@@ -256,29 +280,61 @@
     transform: translateY(0);
   }
 }
+/* A control energizing: a ring of signal light expands off the edge and
+   fades. One-shot, fired the moment a control switches on — the console's
+   glow language as an event rather than a resting state. */
+@keyframes ignite {
+  0% {
+    box-shadow: 0 0 0 0 rgb(81 240 168 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 20px 6px rgb(81 240 168 / 0);
+  }
+}
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-6px);
+  }
 }
 
 @layer base {
   * {
     @apply border-border outline-ring/50;
   }
+  /* No `antialiased` here: -webkit-font-smoothing forces grayscale rendering,
+     which thins strokes on a dark canvas. Letting the OS render text its own
+     way keeps subpixel antialiasing where the platform provides it. */
   body {
-    @apply bg-console-950 text-console-50 font-sans text-base antialiased;
+    @apply bg-console-950 text-console-50 font-sans text-base;
   }
   html {
     @apply font-sans;
   }
+  /* Tailwind's preflight normalizes buttons but leaves the cursor at the
+     browser default, so every button in the app was showing an arrow. Set it
+     once here instead of per component. Disabled controls keep the default
+     cursor — the arrow is the honest signal that nothing will happen. */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="switch"]:not([aria-disabled="true"]) {
+    cursor: pointer;
+  }
 }
 
 @layer utilities {
+  /* Opaque, and no backdrop-blur. The page behind a panel is a flat opaque
+     canvas, so there was never anything to blur — but the filter still forced
+     every panel into its own compositing layer, and text inside a composited
+     layer loses subpixel antialiasing. That is what made the type shimmer. */
   .surface-panel {
-    @apply relative bg-console-800/80 backdrop-blur-md border border-console-600/80 rounded-sm;
+    @apply relative bg-console-800 border border-console-600/80 rounded-sm;
   }
   .surface-elevated {
-    @apply bg-console-700/50 backdrop-blur-md border border-console-600/80 rounded-sm;
+    @apply bg-console-700 border border-console-600/80 rounded-sm;
   }
   .row-hover {
     @apply hover:bg-console-700/40 transition-colors duration-150;
@@ -287,32 +343,51 @@
      existing call site — which applies this as a bare class — lights up
      only while actually focused, instead of glowing permanently. */
   .focus-console {
-    transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+    transition:
+      box-shadow 150ms ease-out,
+      border-color 150ms ease-out;
   }
   .focus-console:focus {
     @apply outline-none border-signal-info;
-    box-shadow: 0 0 0 2px rgb(81 240 168 / 0.35), 0 0 12px 0 rgb(81 240 168 / 0.3);
+    box-shadow:
+      0 0 0 2px rgb(81 240 168 / 0.35),
+      0 0 12px 0 rgb(81 240 168 / 0.3);
   }
   .focus-console-error {
-    transition: box-shadow 150ms ease-out, border-color 150ms ease-out;
+    transition:
+      box-shadow 150ms ease-out,
+      border-color 150ms ease-out;
   }
   .focus-console-error:focus {
     @apply outline-none border-signal-error;
-    box-shadow: 0 0 0 2px rgb(255 120 165 / 0.35), 0 0 12px 0 rgb(255 120 165 / 0.3);
+    box-shadow:
+      0 0 0 2px rgb(255 120 165 / 0.35),
+      0 0 12px 0 rgb(255 120 165 / 0.3);
   }
-  .bg-grid {
-    background-image: var(--grid-image);
-    background-size: 24px 24px;
+  /* Same glow, driven by :focus-within — for composite controls where the
+     focusable element is nested (the combobox input inside its chip group),
+     so the ring lands on the control the user sees, not the bare input. */
+  .focus-console-within {
+    transition:
+      box-shadow 150ms ease-out,
+      border-color 150ms ease-out;
   }
-  .bg-scanlines {
-    background-image: var(--scanlines-image);
+  .focus-console-within:focus-within {
+    @apply outline-none border-signal-info;
+    box-shadow:
+      0 0 0 2px rgb(81 240 168 / 0.35),
+      0 0 12px 0 rgb(81 240 168 / 0.3);
   }
   .hover-lift {
-    transition: transform 200ms ease-out, box-shadow 200ms ease-out;
+    transition:
+      transform 200ms ease-out,
+      box-shadow 200ms ease-out;
   }
   .hover-lift:hover {
     transform: translateY(-2px);
-    box-shadow: 0 0 0 1px rgb(81 240 168 / 0.45), 0 0 12px 0 rgb(81 240 168 / 0.35);
+    box-shadow:
+      0 0 0 1px rgb(81 240 168 / 0.45),
+      0 0 12px 0 rgb(81 240 168 / 0.35);
   }
   .press-scale {
     @apply transition-transform duration-100 active:scale-[0.97];
@@ -330,19 +405,172 @@
     text-shadow: 0 0 8px rgb(255 120 165 / 0.6);
   }
   .shadow-glow-info {
-    box-shadow: 0 0 0 1px rgb(81 240 168 / 0.45), 0 0 12px 0 rgb(81 240 168 / 0.35);
+    box-shadow:
+      0 0 0 1px rgb(81 240 168 / 0.45),
+      0 0 12px 0 rgb(81 240 168 / 0.35);
   }
   .shadow-glow-warning {
-    box-shadow: 0 0 0 1px rgb(255 177 136 / 0.45), 0 0 12px 0 rgb(255 177 136 / 0.35);
+    box-shadow:
+      0 0 0 1px rgb(255 177 136 / 0.45),
+      0 0 12px 0 rgb(255 177 136 / 0.35);
   }
   .shadow-glow-success {
-    box-shadow: 0 0 0 1px rgb(158 255 161 / 0.45), 0 0 12px 0 rgb(158 255 161 / 0.35);
+    box-shadow:
+      0 0 0 1px rgb(158 255 161 / 0.45),
+      0 0 12px 0 rgb(158 255 161 / 0.35);
   }
   .shadow-glow-error {
-    box-shadow: 0 0 0 1px rgb(255 120 165 / 0.45), 0 0 12px 0 rgb(255 120 165 / 0.35);
+    box-shadow:
+      0 0 0 1px rgb(255 120 165 / 0.45),
+      0 0 12px 0 rgb(255 120 165 / 0.35);
   }
   .shadow-panel {
     box-shadow: var(--shadow-panel);
+  }
+
+  /* Document editor typography. There is no typography plugin here, so this is
+     the whole prose vocabulary, scoped to the editable surface. Sans for prose,
+     mono only for code (Mono-is-Data); mint is the only accent; depth is a
+     glow, never a shadow. Tiptap injects the ProseMirror base CSS itself, so
+     nothing structural belongs here — only the look. */
+  .kenoma-prose {
+    font-family: var(--font-sans);
+    font-size: 0.875rem;
+    line-height: 1.65;
+    color: var(--color-console-100);
+    outline: none;
+  }
+  .kenoma-prose > * + * {
+    margin-top: var(--spacing-row);
+  }
+  .kenoma-prose :is(h1, h2, h3) {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--color-console-50);
+    text-wrap: balance;
+  }
+  .kenoma-prose h1 {
+    font-size: 1.5rem;
+  }
+  .kenoma-prose h2 {
+    font-size: 1.125rem;
+  }
+  .kenoma-prose h3 {
+    font-size: 1rem;
+  }
+  /* Headings breathe above and hug the text they introduce. */
+  .kenoma-prose > * + :is(h1, h2, h3) {
+    margin-top: var(--spacing-gutter-lg);
+  }
+  .kenoma-prose > :is(h1, h2, h3) + * {
+    margin-top: var(--spacing-gutter);
+  }
+  .kenoma-prose :is(ul, ol) {
+    padding-left: 1.5rem;
+  }
+  .kenoma-prose ul {
+    list-style: disc;
+  }
+  .kenoma-prose ol {
+    list-style: decimal;
+  }
+  .kenoma-prose li {
+    margin-top: var(--spacing-row-sm);
+  }
+  .kenoma-prose li::marker {
+    color: var(--color-console-400);
+  }
+  /* List items hold blocks, so their paragraph would otherwise add a second
+     layer of spacing inside every bullet. */
+  .kenoma-prose li > p {
+    margin: 0;
+  }
+  .kenoma-prose li > :is(ul, ol) {
+    margin-top: var(--spacing-row-sm);
+  }
+  .kenoma-prose blockquote {
+    border-left: 2px solid var(--color-console-500);
+    padding-left: var(--spacing-gutter);
+    font-style: italic;
+    color: var(--color-console-200);
+  }
+  .kenoma-prose blockquote > * + * {
+    margin-top: var(--spacing-row-sm);
+  }
+  .kenoma-prose code {
+    font-family: var(--font-mono);
+    font-size: 0.8125rem;
+    border: 1px solid var(--color-console-600);
+    border-radius: 4px;
+    background: var(--color-console-900);
+    padding: 0.125rem 0.25rem;
+    color: var(--color-console-50);
+  }
+  .kenoma-prose pre {
+    border: 1px solid var(--color-console-600);
+    border-radius: var(--radius-sm);
+    background: var(--color-console-900);
+    padding: var(--spacing-gutter);
+    overflow-x: auto;
+  }
+  .kenoma-prose pre code {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    color: var(--color-console-100);
+    line-height: 1.55;
+  }
+  .kenoma-prose hr {
+    border: 0;
+    border-top: 1px solid var(--color-console-600);
+    margin-block: var(--spacing-gutter-lg);
+  }
+  .kenoma-prose a {
+    color: var(--color-signal-info);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgb(81 240 168 / 0.4);
+    transition: text-decoration-color 120ms ease;
+  }
+  .kenoma-prose a:hover {
+    text-decoration-color: var(--color-signal-info);
+  }
+  .kenoma-prose strong {
+    font-weight: 600;
+    color: var(--color-console-50);
+  }
+  .kenoma-prose s {
+    color: var(--color-console-300);
+  }
+  /* The placeholder extension marks the empty first block; the float keeps the
+     hint from displacing the caret. */
+  .kenoma-prose p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--color-console-400);
+    float: left;
+    height: 0;
+    pointer-events: none;
+  }
+  .kenoma-prose ::selection {
+    background: rgb(81 240 168 / 0.22);
+  }
+  .kenoma-prose .ProseMirror-selectednode {
+    border-radius: 4px;
+    box-shadow: 0 0 0 2px rgb(81 240 168 / 0.45);
+  }
+  .kenoma-prose hr.ProseMirror-selectednode {
+    border-top-color: var(--color-signal-info);
+    box-shadow: 0 0 8px 0 rgb(81 240 168 / 0.35);
+  }
+  /* Tiptap's injected base CSS draws this in solid black, which is invisible on
+     the dark canvas. */
+  .ProseMirror-gapcursor::after {
+    border-top-color: var(--color-signal-info);
+  }
+  /* Read-only content should read as text, not as a disabled input. */
+  .kenoma-prose[contenteditable="false"] {
+    color: var(--color-console-200);
   }
 }
 
@@ -355,9 +583,9 @@
   *::before,
   *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
-

@@ -7,8 +7,6 @@ import type { NextConfig } from "next";
 // so this has to happen explicitly before config/build reads process.env.
 loadEnvConfig(path.join(process.cwd(), ".."));
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const nextConfig: NextConfig = {/* config options here */};
 
 export default nextConfig;

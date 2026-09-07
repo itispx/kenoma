@@ -55,7 +55,10 @@ export default function ForgotPasswordPage() {
       setSent(true);
     } catch (err) {
       toast.error("Couldn't send reset link", {
-        description: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+        description:
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong. Please try again.",
       });
     } finally {
       setSubmitting(false);
@@ -67,10 +70,15 @@ export default function ForgotPasswordPage() {
     try {
       await auth.requestPasswordReset(email);
       setCooldown(RESEND_COOLDOWN_SECONDS);
-      toast.success("New link sent", { description: "Use the most recent email." });
+      toast.success("New link sent", {
+        description: "Use the most recent email.",
+      });
     } catch (err) {
       toast.error("Couldn't send a new link", {
-        description: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+        description:
+          err instanceof ApiError
+            ? err.message
+            : "Something went wrong. Please try again.",
       });
     } finally {
       setResending(false);
@@ -79,12 +87,16 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <AuthShell title="Check your email" subtitle="A reset link is on its way, if that account exists.">
+      <AuthShell
+        title="Check your email"
+        subtitle="A reset link is on its way, if that account exists."
+      >
         <div className="animate-stagger-in flex flex-col items-center gap-4 py-2 text-center">
           <MailCheck className="h-8 w-8 text-signal-info" />
           <p className="text-sm text-console-300">
-            If an account exists for <span className="text-console-50">{email}</span>, we&apos;ve sent a link to
-            reset the password.
+            If an account exists for{" "}
+            <span className="text-console-50">{email}</span>, we&apos;ve sent a
+            link to reset the password.
           </p>
           {/* The one time-critical fact on this screen, so it gets its own
               weight instead of trailing the sentence above. Warning hue rather
@@ -105,7 +117,11 @@ export default function ForgotPasswordPage() {
             disabled={cooldown > 0 || resending}
             className={secondaryBtn}
           >
-            {resending ? "Sending…" : cooldown > 0 ? `Resend in ${cooldown}s` : "Send a new link"}
+            {resending
+              ? "Sending…"
+              : cooldown > 0
+                ? `Resend in ${cooldown}s`
+                : "Send a new link"}
           </button>
           <p className="text-center text-xs text-console-400">
             Sending a new link invalidates the previous one.
@@ -120,7 +136,10 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <AuthShell title="Reset your password" subtitle="We'll email you a link to get back in.">
+    <AuthShell
+      title="Reset your password"
+      subtitle="We'll email you a link to get back in."
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <Field label="Email" error={emailError} errorId="forgot-email-error">
           <input

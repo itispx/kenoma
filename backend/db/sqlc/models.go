@@ -11,6 +11,114 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ChangeLog struct {
+	ID                uuid.UUID     `json:"id"`
+	WorkstreamID      uuid.UUID     `json:"workstream_id"`
+	Seq               int64         `json:"seq"`
+	ParentChangeLogID uuid.NullUUID `json:"parent_change_log_id"`
+	Message           string        `json:"message"`
+	Title             string        `json:"title"`
+	ContentMarkdown   string        `json:"content_markdown"`
+	CreatedBy         uuid.UUID     `json:"created_by"`
+	CreatedAt         time.Time     `json:"created_at"`
+}
+
+type ChangeRequest struct {
+	ID              uuid.UUID          `json:"id"`
+	DocumentID      uuid.UUID          `json:"document_id"`
+	BaseRevisionID  uuid.UUID          `json:"base_revision_id"`
+	Kind            string             `json:"kind"`
+	Title           string             `json:"title"`
+	ContentMarkdown string             `json:"content_markdown"`
+	Status          string             `json:"status"`
+	OpenedBy        uuid.UUID          `json:"opened_by"`
+	MergedBy        uuid.NullUUID      `json:"merged_by"`
+	CloseNote       string             `json:"close_note"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+	ClosedAt        pgtype.Timestamptz `json:"closed_at"`
+	WorkstreamID    uuid.NullUUID      `json:"workstream_id"`
+}
+
+type CrComment struct {
+	ID              uuid.UUID          `json:"id"`
+	ChangeRequestID uuid.UUID          `json:"change_request_id"`
+	ParentID        uuid.NullUUID      `json:"parent_id"`
+	CreatedBy       uuid.UUID          `json:"created_by"`
+	Body            string             `json:"body"`
+	DiffAnchor      []byte             `json:"diff_anchor"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	CreatedAt       time.Time          `json:"created_at"`
+}
+
+type Document struct {
+	ID              uuid.UUID          `json:"id"`
+	ProjectID       uuid.UUID          `json:"project_id"`
+	Title           string             `json:"title"`
+	ContentMarkdown string             `json:"content_markdown"`
+	CreatedBy       uuid.UUID          `json:"created_by"`
+	CreatedAt       time.Time          `json:"created_at"`
+	UpdatedAt       time.Time          `json:"updated_at"`
+	DeletedAt       pgtype.Timestamptz `json:"deleted_at"`
+	HeadRevisionID  uuid.NullUUID      `json:"head_revision_id"`
+}
+
+type DocumentRevision struct {
+	ID              uuid.UUID `json:"id"`
+	DocumentID      uuid.UUID `json:"document_id"`
+	Seq             int64     `json:"seq"`
+	Title           string    `json:"title"`
+	ContentMarkdown string    `json:"content_markdown"`
+	CreatedBy       uuid.UUID `json:"created_by"`
+	CreatedAt       time.Time `json:"created_at"`
+}
+
+type DocumentWorkstream struct {
+	ID             uuid.UUID          `json:"id"`
+	DocumentID     uuid.UUID          `json:"document_id"`
+	OwnerID        uuid.UUID          `json:"owner_id"`
+	Name           string             `json:"name"`
+	BaseRevisionID uuid.UUID          `json:"base_revision_id"`
+	Status         string             `json:"status"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	SubmittedAt    pgtype.Timestamptz `json:"submitted_at"`
+	AbandonedAt    pgtype.Timestamptz `json:"abandoned_at"`
+}
+
+type Organization struct {
+	ID               uuid.UUID          `json:"id"`
+	Name             string             `json:"name"`
+	IsPersonal       bool               `json:"is_personal"`
+	MembersCanInvite bool               `json:"members_can_invite"`
+	CreatedBy        uuid.UUID          `json:"created_by"`
+	CreatedAt        time.Time          `json:"created_at"`
+	UpdatedAt        time.Time          `json:"updated_at"`
+	DeletedAt        pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type OrganizationInvitation struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Email          string             `json:"email"`
+	Role           string             `json:"role"`
+	TokenHash      string             `json:"token_hash"`
+	InvitedBy      uuid.UUID          `json:"invited_by"`
+	ExpiresAt      time.Time          `json:"expires_at"`
+	AcceptedAt     pgtype.Timestamptz `json:"accepted_at"`
+	RevokedAt      pgtype.Timestamptz `json:"revoked_at"`
+	CreatedAt      time.Time          `json:"created_at"`
+}
+
+type OrganizationMember struct {
+	ID             uuid.UUID     `json:"id"`
+	OrganizationID uuid.UUID     `json:"organization_id"`
+	UserID         uuid.UUID     `json:"user_id"`
+	Role           string        `json:"role"`
+	InvitedBy      uuid.NullUUID `json:"invited_by"`
+	JoinedAt       time.Time     `json:"joined_at"`
+}
+
 type PasswordResetToken struct {
 	ID        uuid.UUID          `json:"id"`
 	UserID    uuid.UUID          `json:"user_id"`
@@ -18,6 +126,30 @@ type PasswordResetToken struct {
 	ExpiresAt time.Time          `json:"expires_at"`
 	UsedAt    pgtype.Timestamptz `json:"used_at"`
 	CreatedAt time.Time          `json:"created_at"`
+}
+
+type Permission struct {
+	Key         string `json:"key"`
+	Description string `json:"description"`
+}
+
+type Project struct {
+	ID             uuid.UUID          `json:"id"`
+	OrganizationID uuid.UUID          `json:"organization_id"`
+	Name           string             `json:"name"`
+	CreatedBy      uuid.UUID          `json:"created_by"`
+	CreatedAt      time.Time          `json:"created_at"`
+	UpdatedAt      time.Time          `json:"updated_at"`
+	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+}
+
+type ProjectPermissionGrant struct {
+	ID            uuid.UUID `json:"id"`
+	ProjectID     uuid.UUID `json:"project_id"`
+	UserID        uuid.UUID `json:"user_id"`
+	PermissionKey string    `json:"permission_key"`
+	GrantedBy     uuid.UUID `json:"granted_by"`
+	CreatedAt     time.Time `json:"created_at"`
 }
 
 type RefreshToken struct {

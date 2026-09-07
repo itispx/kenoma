@@ -9,8 +9,21 @@ export function Logo({
   const dark = variant === "simple" ? "/simple-dark.svg" : "/dark.svg";
   return (
     <>
-      <img src={light} alt="Kenoma" className={`block dark:hidden ${className}`} />
-      <img src={dark} alt="Kenoma" className={`hidden dark:block ${className}`} />
+      <Image
+        src={light}
+        width={160}
+        height={40}
+        alt="Kenoma"
+        className={`block dark:hidden ${className}`}
+      />
+      <Image
+        src={dark}
+        width={160}
+        height={40}
+        alt="Kenoma"
+        className={`hidden dark:block ${className}`}
+      />
     </>
   );
 }
+import Image from "next/image";

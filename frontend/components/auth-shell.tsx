@@ -20,7 +20,9 @@ export function Field({
 }) {
   return (
     <label className="flex flex-col gap-1 text-sm">
-      <span className="text-xs font-medium uppercase tracking-wide text-console-300">{label}</span>
+      <span className="text-xs font-medium uppercase tracking-wide text-console-300">
+        {label}
+      </span>
       {children}
       {/* The message slot is always laid out, so an error appearing fills it
           instead of pushing the rest of the form down. min-h-4 reserves
@@ -94,9 +96,18 @@ export function PasswordField({
   );
 }
 
-export function AuthLink({ href, children }: { href: string; children: React.ReactNode }) {
+export function AuthLink({
+  href,
+  children,
+}: {
+  href: string;
+  children: React.ReactNode;
+}) {
   return (
-    <a href={href} className="text-signal-info underline underline-offset-2 hover:text-glow-info transition-all">
+    <a
+      href={href}
+      className="text-signal-info underline underline-offset-2 hover:text-glow-info transition-all"
+    >
       {children}
     </a>
   );
@@ -112,9 +123,7 @@ export function AuthShell({
   children: React.ReactNode;
 }) {
   return (
-    <main className="relative flex min-h-dvh items-center justify-center overflow-x-hidden overflow-y-auto bg-console-950 bg-grid py-8">
-      <div className="bg-scanlines pointer-events-none absolute inset-0 opacity-40" />
-
+    <main className="relative flex min-h-dvh items-center justify-center overflow-x-hidden overflow-y-auto bg-console-950 py-8">
       <div className="absolute right-4 top-4 rounded-md border border-console-600 p-0.5">
         <ThemeToggle />
       </div>
@@ -122,14 +131,19 @@ export function AuthShell({
       <div className="animate-materialize relative z-10 w-full max-w-md px-4">
         <div className="mb-6 flex flex-col items-center gap-1.5 text-center">
           <Logo variant="full" className="h-9 w-auto animate-float" />
-          <div className="h-[3px] w-[3px] rounded-full bg-console-600" aria-hidden="true" />
+          <div
+            className="h-[3px] w-[3px] rounded-full bg-console-600"
+            aria-hidden="true"
+          />
           <div className="text-xs font-medium uppercase tracking-widest text-console-400">
             Every revision tracked, every change reviewed.
           </div>
         </div>
 
         <div className="surface-panel shadow-panel p-gutter-lg">
-          <h1 className="mb-1 font-heading text-[1.0625rem] font-semibold">{title}</h1>
+          <h1 className="mb-1 font-heading text-[1.0625rem] font-semibold">
+            {title}
+          </h1>
           <p className="mb-6 text-sm text-console-300">{subtitle}</p>
           <div className="mt-2.5">{children}</div>
         </div>

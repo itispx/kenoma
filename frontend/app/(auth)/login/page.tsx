@@ -45,11 +45,17 @@ function LoginForm() {
       if (err instanceof ApiError && err.status === 401) {
         toast.error("Couldn't sign in", {
           description: "Double-check your email and password.",
-          action: { label: "Reset password", onClick: () => router.push("/forgot-password") },
+          action: {
+            label: "Reset password",
+            onClick: () => router.push("/forgot-password"),
+          },
         });
       } else {
         toast.error("Couldn't sign in", {
-          description: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+          description:
+            err instanceof ApiError
+              ? err.message
+              : "Something went wrong. Please try again.",
         });
       }
     } finally {

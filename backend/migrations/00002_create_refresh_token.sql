@@ -10,6 +10,7 @@ CREATE TABLE refresh_token (
 
 CREATE UNIQUE INDEX refresh_token_token_hash_idx ON refresh_token (token_hash);
 CREATE INDEX refresh_token_user_id_idx ON refresh_token (user_id);
+CREATE INDEX refresh_token_expires_at_idx ON refresh_token (expires_at);
 
 -- +goose Down
 DROP TABLE refresh_token;

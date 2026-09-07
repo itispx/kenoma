@@ -27,7 +27,8 @@ export default function RegisterPage() {
   const [passwordTouched, setPasswordTouched] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  const nameError = nameTouched && name.trim() === "" ? "Name is required." : undefined;
+  const nameError =
+    nameTouched && name.trim() === "" ? "Name is required." : undefined;
   const emailError = !emailTouched
     ? undefined
     : email === ""
@@ -48,7 +49,8 @@ export default function RegisterPage() {
     setNameTouched(true);
     setEmailTouched(true);
     setPasswordTouched(true);
-    if (name.trim() === "" || !isValidEmail(email) || password.length < 8) return;
+    if (name.trim() === "" || !isValidEmail(email) || password.length < 8)
+      return;
     setSubmitting(true);
     try {
       await register(email, password, name);
@@ -57,12 +59,16 @@ export default function RegisterPage() {
     } catch (err) {
       if (err instanceof ApiError && err.status === 409) {
         toast.error("That email is already registered", {
-          description: "Sign in instead, or reset your password if you've forgotten it.",
+          description:
+            "Sign in instead, or reset your password if you've forgotten it.",
           action: { label: "Sign in", onClick: () => router.push("/login") },
         });
       } else {
         toast.error("Couldn't create your account", {
-          description: err instanceof ApiError ? err.message : "Something went wrong. Please try again.",
+          description:
+            err instanceof ApiError
+              ? err.message
+              : "Something went wrong. Please try again.",
         });
       }
     } finally {
@@ -71,7 +77,10 @@ export default function RegisterPage() {
   }
 
   return (
-    <AuthShell title="Create your account" subtitle="Set up your workspace in under a minute.">
+    <AuthShell
+      title="Create your account"
+      subtitle="Set up your workspace in under a minute."
+    >
       <form onSubmit={onSubmit} className="flex flex-col gap-4" noValidate>
         <Field label="Name" error={nameError} errorId="register-name-error">
           <input
@@ -112,7 +121,9 @@ export default function RegisterPage() {
             onChange={(e) => setPassword(e.target.value)}
             onBlur={() => setPasswordTouched(true)}
             aria-invalid={!!passwordError}
-            aria-describedby={passwordError ? "register-password-error" : undefined}
+            aria-describedby={
+              passwordError ? "register-password-error" : undefined
+            }
             hasError={!!passwordError}
           />
         </Field>

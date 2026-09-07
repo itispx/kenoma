@@ -1,151 +1,86 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-08-01T00:00:00Z",
+  "generatedAt": "2026-08-25T09:42:00Z",
   "title": "Design System: Kenoma",
   "extensions": {
     "colorMeta": {
-      "signal-mint": {
-        "role": "primary",
-        "displayName": "Signal Mint",
-        "canonical": "#51f0a8",
-        "tonalRamp": ["#0a2b1e", "#0f4230", "#155c40", "#1c7855", "#2c9e72", "#3fc48f", "#51f0a8", "#a6f8d3"]
-      },
-      "signal-peach": {
-        "role": "warning",
-        "displayName": "Signal Peach",
-        "canonical": "#ffb188",
-        "tonalRamp": ["#3a1c0e", "#5c2c16", "#7e3c1f", "#a8552c", "#c96f42", "#e88f60", "#ffb188", "#ffd6bd"]
-      },
-      "signal-lime": {
-        "role": "success",
-        "displayName": "Signal Lime",
-        "canonical": "#9effa1",
-        "tonalRamp": ["#153017", "#204b22", "#2c6830", "#3d8a41", "#57ad5c", "#78d17c", "#9effa1", "#c9ffcb"]
-      },
-      "signal-magenta": {
-        "role": "error",
-        "displayName": "Signal Magenta",
-        "canonical": "#ff78a5",
-        "tonalRamp": ["#3a0f1f", "#5c1830", "#7e2242", "#a82f58", "#c94270", "#e85c8c", "#ff78a5", "#ffb0c8"]
-      },
-      "background": {
-        "role": "neutral",
-        "displayName": "Void Black",
-        "canonical": "#000000",
-        "tonalRamp": ["#000000", "#050505", "#0a0a0a", "#1a1b1b", "#26262a", "#3b3b3b", "#6b6b6e", "#8a8a8d"]
-      },
-      "text-primary": {
-        "role": "neutral",
-        "displayName": "Primary Text",
-        "canonical": "#f4f4f5",
-        "tonalRamp": ["#6b6b6e", "#8a8a8d", "#a8a8ac", "#c4c4c8", "#d4d4d8", "#e4e4e7", "#f4f4f5", "#ffffff"]
-      }
+      "primary": { "role": "primary", "displayName": "Signal Mint", "canonical": "#51F0A8", "tonalRamp": ["#0A2B1E", "#0F4230", "#155C40", "#1C7855", "#2C9E72", "#3FC48F", "#51F0A8", "#A6F8D3"] },
+      "warning": { "role": "warning", "displayName": "Signal Peach", "canonical": "#FFB188", "tonalRamp": ["#3A1C0E", "#5C2C16", "#7E3C1F", "#A8552C", "#C96F42", "#E88F60", "#FFB188", "#FFD6BD"] },
+      "success": { "role": "success", "displayName": "Signal Lime", "canonical": "#9EFFA1", "tonalRamp": ["#153017", "#204B22", "#2C6830", "#3D8A41", "#57AD5C", "#78D17C", "#9EFFA1", "#C9FFCB"] },
+      "error": { "role": "error", "displayName": "Signal Magenta", "canonical": "#FF78A5", "tonalRamp": ["#3A0F1F", "#5C1830", "#7E2242", "#A82F58", "#C94270", "#E85C8C", "#FF78A5", "#FFB0C8"] },
+      "bg.default": { "role": "neutral", "displayName": "Near Black", "canonical": "#0B0B0D", "tonalRamp": ["#0B0B0D", "#101012", "#141416", "#1E1E21", "#2B2B30", "#3F3F45", "#86868A", "#E8E8EA"] },
+      "bg.default-panel": { "role": "neutral", "displayName": "Panel Graphite", "canonical": "#141416", "tonalRamp": ["#0B0B0D", "#101012", "#141416", "#1E1E21", "#2B2B30", "#3F3F45", "#86868A", "#E8E8EA"] },
+      "text.default": { "role": "neutral", "displayName": "Primary Text", "canonical": "#E8E8EA", "tonalRamp": ["#2B2B30", "#3F3F45", "#68686D", "#86868A", "#A8A8AC", "#C4C4C8", "#D4D4D8", "#E8E8EA"] }
     },
     "typographyMeta": {
-      "body": { "displayName": "Body / UI", "purpose": "Every heading, button, label, and paragraph in the interface chrome." },
-      "title": { "displayName": "Page Title", "purpose": "Page-level headings (e.g. dashboard 'Projects')." },
-      "title-compact": { "displayName": "Panel Title", "purpose": "Panel-level headings inside a focused single-card surface (e.g. auth flow headings) — quieter than Page Title." },
-      "label": { "displayName": "Label", "purpose": "Status badges and nav microcopy — always plain-language, never raw identifiers." },
-      "mono": { "displayName": "Data / Mono", "purpose": "Diffs, IDs, inline code — the only place monospace appears." }
+      "body": { "displayName": "Body", "purpose": "Default interface copy in Inter at 14px with a 20px line height." },
+      "pageTitle": { "displayName": "Page Title", "purpose": "Top-level page headings in Inter at 24px and weight 700." },
+      "caption": { "displayName": "Caption", "purpose": "Table headers and section labels in uppercase at 11px." },
+      "button": { "displayName": "Button", "purpose": "Action labels in Inter at 14px and weight 600." },
+      "mono": { "displayName": "Data and Machine Feedback", "purpose": "IDs, diffs, code, and direct machine feedback in JetBrains Mono." }
     },
     "shadows": [
-      { "name": "panel-ambient", "value": "0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.28)", "purpose": "The one non-glow shadow; separates sticky header/panels from the void background." },
-      { "name": "glow-info", "value": "0 0 0 1px rgb(81 240 168 / 0.45), 0 0 12px 0 rgb(81 240 168 / 0.35)", "purpose": "Focus rings, hover-lift, the 'connected' status dot." },
-      { "name": "glow-warning", "value": "0 0 0 1px rgb(255 177 136 / 0.45), 0 0 12px 0 rgb(255 177 136 / 0.35)", "purpose": "Warning-state emphasis." },
-      { "name": "glow-success", "value": "0 0 0 1px rgb(158 255 161 / 0.45), 0 0 12px 0 rgb(158 255 161 / 0.35)", "purpose": "Success-state emphasis." },
-      { "name": "glow-error", "value": "0 0 0 1px rgb(255 120 165 / 0.45), 0 0 12px 0 rgb(255 120 165 / 0.35)", "purpose": "Error-state emphasis, error-focus rings." }
+      { "name": "panel-ambient", "value": "0 1px 2px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.28)", "purpose": "Quiet separation for elevated panels and overlays." },
+      { "name": "glow-info", "value": "0 0 0 1px rgb(81 240 168 / 0.45), 0 0 12px rgb(81 240 168 / 0.35)", "purpose": "Mint focus, hover, and active-state glow." },
+      { "name": "glow-error", "value": "0 0 0 1px rgb(255 120 165 / 0.45), 0 0 12px rgb(255 120 165 / 0.35)", "purpose": "Error and destructive-state emphasis." }
     ],
     "motion": [
-      { "name": "materialize", "value": "320ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "One-shot entrance for panels/route content: fade + slight scale/translate + brightness flash." },
-      { "name": "flicker-in", "value": "260ms steps(1, end)", "purpose": "Signal-flicker entrance, used sparingly for a 'coming online' moment." },
-      { "name": "pulse-glow", "value": "2200ms ease-in-out infinite", "purpose": "Looping glow breathing for live/active indicators (never a one-shot)." },
-      { "name": "scan-sweep-loop", "value": "1400ms linear infinite", "purpose": "Looping progress-bar sweep for indeterminate loading (boot screen)." },
-      { "name": "caret-blink", "value": "1000ms steps(1, end) infinite", "purpose": "Terminal-style caret blink, used sparingly as a single accent, not throughout the UI." },
-      { "name": "stagger-in", "value": "460ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "Staggered list/line reveal with translateY, delayed per item." }
+      { "name": "materialize", "value": "320ms cubic-bezier(0.16, 1, 0.3, 1)", "purpose": "One-shot entrance for route content and panels." },
+      { "name": "state-transition", "value": "150ms ease-out", "purpose": "Default control color, border, and focus transition." },
+      { "name": "hover-lift", "value": "200ms ease-out", "purpose": "Two-pixel lift and mint glow for interactive surfaces." },
+      { "name": "scan-sweep-loop", "value": "1400ms linear infinite", "purpose": "Indeterminate boot-screen progress." }
     ],
     "breakpoints": [
+      { "name": "sm", "value": "640px" },
       { "name": "md", "value": "768px" }
     ]
   },
   "components": [
     {
-      "name": "Primary Button",
-      "kind": "button",
-      "refersTo": "button-primary",
-      "description": "The single primary action per view.",
-      "html": "<button class=\"ds-btn ds-btn-primary\">Save changes</button>",
-      "css": ".ds-btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 12px; border: 1px solid transparent; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; font-weight: 500; white-space: nowrap; cursor: pointer; transition: background-color 150ms ease-out, box-shadow 150ms ease-out, transform 100ms ease-out; } .ds-btn:active { transform: translateY(1px) scale(0.97); } .ds-btn-primary { background: #51f0a8; color: #000000; } .ds-btn-primary:hover { background: rgba(81,240,168,0.8); } .ds-btn-primary:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(81,240,168,0.5), 0 0 12px 0 rgba(81,240,168,0.35); }"
+      "name": "Primary Button", "kind": "button", "refersTo": "button-primary", "description": "The single primary action on a surface.",
+      "html": "<button class=\"ds-btn-primary\">Save changes</button>",
+      "css": ".ds-btn-primary { display:inline-flex; align-items:center; justify-content:center; min-height:32px; padding:8px 12px; border:0; border-radius:8px; background:#51F0A8; color:#0B0B0D; font:600 14px Inter,system-ui,sans-serif; letter-spacing:.02em; cursor:pointer; transition:background-color 150ms ease-out,box-shadow 150ms ease-out,transform 150ms ease-out; } .ds-btn-primary:hover { background:rgb(81 240 168 / .8); box-shadow:0 0 0 1px rgb(81 240 168 / .45),0 0 12px rgb(81 240 168 / .35); transform:translateY(-2px); } .ds-btn-primary:focus-visible { outline:0; box-shadow:0 0 0 2px rgb(81 240 168 / .35),0 0 12px rgb(81 240 168 / .3); } .ds-btn-primary:active { transform:scale(.98); }"
     },
     {
-      "name": "Outline Button",
-      "kind": "button",
-      "refersTo": "button-outline",
-      "description": "Secondary action, sits on the void background.",
-      "html": "<button class=\"ds-btn ds-btn-outline\">Cancel</button>",
-      "css": ".ds-btn-outline { background: #000000; color: #f4f4f5; border: 1px solid #26262a; } .ds-btn-outline:hover { background: #1a1b1b; } .ds-btn-outline:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(81,240,168,0.5), 0 0 12px 0 rgba(81,240,168,0.35); }"
+      "name": "Outline Button", "kind": "button", "refersTo": "button-outline", "description": "A secondary action that does not compete with mint.",
+      "html": "<button class=\"ds-btn-outline\">Cancel</button>",
+      "css": ".ds-btn-outline { display:inline-flex; align-items:center; justify-content:center; min-height:32px; padding:8px 12px; border:1px solid #3F3F45; border-radius:8px; background:transparent; color:#D4D4D8; font:600 14px Inter,system-ui,sans-serif; cursor:pointer; transition:background-color 150ms ease-out,border-color 150ms ease-out,transform 150ms ease-out; } .ds-btn-outline:hover { background:rgb(30 30 33 / .4); transform:translateY(-2px); } .ds-btn-outline:focus-visible { outline:0; border-color:#51F0A8; box-shadow:0 0 0 2px rgb(81 240 168 / .35); }"
     },
     {
-      "name": "Text Input",
-      "kind": "input",
-      "refersTo": "input-default",
-      "description": "Standard field: transparent fill, hairline border, mint focus glow.",
+      "name": "Text Input", "kind": "input", "refersTo": "input-default", "description": "Transparent field with a hairline border and mint focus glow.",
       "html": "<input class=\"ds-input\" placeholder=\"Project name\" />",
-      "css": ".ds-input { height: 32px; width: 100%; border-radius: 12px; border: 1px solid #26262a; background: transparent; color: #f4f4f5; padding: 4px 10px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; transition: box-shadow 150ms ease-out, border-color 150ms ease-out; } .ds-input::placeholder { color: #8a8a8d; } .ds-input:focus { outline: none; border-color: #51f0a8; box-shadow: 0 0 0 2px rgba(81,240,168,0.35), 0 0 12px 0 rgba(81,240,168,0.3); }"
+      "css": ".ds-input { width:100%; padding:10px 12px; border:1px solid #3F3F45; border-radius:8px; background:transparent; color:#E8E8EA; font:400 16px Inter,system-ui,sans-serif; transition:border-color 150ms ease-out,box-shadow 150ms ease-out; } .ds-input::placeholder { color:#86868A; } .ds-input:focus { outline:0; border-color:#51F0A8; box-shadow:0 0 0 2px rgb(81 240 168 / .35),0 0 12px rgb(81 240 168 / .3); }"
     },
     {
-      "name": "Panel",
-      "kind": "card",
-      "refersTo": "panel-default",
-      "description": "The base surface for grouped content — translucent graphite over the void, blurred, hairline border, no shadow at rest.",
-      "html": "<div class=\"ds-panel\"><div class=\"ds-panel-title\">Project overview</div><div class=\"ds-panel-body\">Panel content goes here.</div></div>",
-      "css": ".ds-panel { background: rgba(10,10,10,0.8); backdrop-filter: blur(12px); border: 1px solid rgba(38,38,42,0.8); border-radius: 8px; padding: 16px; } .ds-panel-title { font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-weight: 600; font-size: 1rem; color: #f4f4f5; margin-bottom: 8px; } .ds-panel-body { color: #a8a8ac; font-size: 0.875rem; line-height: 1.5; }"
+      "name": "Panel", "kind": "card", "refersTo": "panel-default", "description": "Opaque graphite container with a quiet hairline border.",
+      "html": "<section class=\"ds-panel\"><h3>Project overview</h3><p>Panel content goes here.</p></section>",
+      "css": ".ds-panel { padding:20px; border:1px solid rgb(43 43 48 / .8); border-radius:12px; background:#141416; color:#E8E8EA; font-family:Inter,system-ui,sans-serif; } .ds-panel h3 { margin:0 0 12px; font-size:14px; font-weight:600; } .ds-panel p { margin:0; color:#A8A8AC; font-size:14px; line-height:20px; }"
     },
     {
-      "name": "Status Badge",
-      "kind": "custom",
-      "refersTo": "status-badge",
-      "description": "Glyph + plain-language label in the matching semantic color; the canonical way any revision/document state is shown.",
-      "html": "<span class=\"ds-status ds-status-review\"><span aria-hidden=\"true\">◐</span>in review</span>",
-      "css": ".ds-status { display: inline-flex; align-items: center; gap: 6px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; } .ds-status-review { color: #ffb188; } .ds-status-approved { color: #9effa1; } .ds-status-rejected { color: #ff78a5; } .ds-status-draft { color: #8a8a8d; }"
+      "name": "Status Badge", "kind": "chip", "refersTo": "status-badge", "description": "An explicit label whose hue communicates revision state.",
+      "html": "<span class=\"ds-status-review\">In review</span>",
+      "css": ".ds-status-review { display:inline-flex; align-items:center; padding:2px 6px; border-radius:4px; background:rgb(255 177 136 / .1); color:#FFB188; font:500 11px Inter,system-ui,sans-serif; letter-spacing:.02em; text-transform:uppercase; }"
     },
     {
-      "name": "Sidebar Nav Item",
-      "kind": "nav",
-      "refersTo": "nav-item",
-      "description": "Active state is a left-edge mint border + soft mint wash, never a filled pill; inactive nudges right on hover.",
-      "html": "<a class=\"ds-nav-item ds-nav-item-active\">Projects</a>",
-      "css": ".ds-nav-item { display: flex; align-items: center; gap: 8px; border-radius: 6px; padding: 8px 10px; font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif; font-size: 0.875rem; border-left: 2px solid transparent; color: #8a8a8d; text-decoration: none; transition: color 150ms ease-out, background-color 150ms ease-out, transform 150ms ease-out; } .ds-nav-item:hover { color: #f4f4f5; background: rgba(26,27,27,0.3); transform: translateX(2px); } .ds-nav-item-active { border-left-color: #51f0a8; background: rgba(81,240,168,0.1); color: #f4f4f5; }"
+      "name": "Navigation Item", "kind": "nav", "refersTo": "nav-item", "description": "Compact navigation with mint reserved for active and focus states.",
+      "html": "<a class=\"ds-nav-item ds-nav-item-active\" href=\"#\">Projects</a>",
+      "css": ".ds-nav-item { display:flex; align-items:center; gap:8px; padding:8px 10px; border-radius:8px; color:#86868A; font:400 14px Inter,system-ui,sans-serif; text-decoration:none; transition:color 150ms ease-out,background-color 150ms ease-out,box-shadow 150ms ease-out; } .ds-nav-item:hover { background:rgb(30 30 33 / .5); color:#E8E8EA; } .ds-nav-item:focus-visible { outline:0; box-shadow:0 0 0 2px rgb(81 240 168 / .35); } .ds-nav-item-active { background:rgb(81 240 168 / .1); color:#51F0A8; }"
     }
   ],
   "narrative": {
     "northStar": "Signal Console",
-    "overview": "Kenoma reads as a quiet, confident operations HUD — the visual language of a system monitoring something that matters, not a marketing surface and not a literal terminal emulator. The canonical theme is near-black (#000000) with soft graphite panels, thin hairline borders, and a restrained mint/peach/lime/magenta signal palette that only glows when something is genuinely happening: a focused field, a live status, a successful save. At rest, the interface is calm and precise; state changes are where the personality lives, expressed through color glow and motion rather than decoration. This is a deliberate refinement of an earlier, more literal terminal aesthetic. The system explicitly rejects CLI cosplay: no $/>/# prompt glyphs prefixing copy, no ALL-CAPS jargon in toasts or status text, no raw snake_case/enum strings surfaced to users. Monospace (JetBrains Mono) is reserved for genuinely data-shaped content — diffs, IDs, code-like fragments — and never used as the default UI voice; Space Grotesk carries every heading, button, and body string.",
+    "overview": "Kenoma is a calm technical command deck for documentation teams. Its near-black canonical theme, compact information rhythm, and precise status language make document workflows feel inspectable and dependable. Brand character appears through restrained signal color and stateful glow, while ordinary content stays quiet and readable.",
     "keyCharacteristics": [
-      "Near-black canonical theme with a light counterpart that inverts contrast while preserving the same signal hues and density.",
-      "One primary accent (mint) used sparingly; peach/lime/magenta exist purely as semantic status colors, never as decoration.",
-      "Depth conveyed through glow and blur, not drop-shadow elevation.",
-      "Precise, responsive micro-motion signals state changes rather than being ambient decoration.",
-      "Monospace is a data marker, not a brand voice."
+      "Monospace is reserved for data-shaped content and direct machine feedback.", "Color communicates state rather than decoration.", "Dark is canonical, with near-black surfaces and restrained signal glows.", "Dense layouts follow a repeatable console grid and spacing rhythm."
     ],
     "rules": [
-      { "name": "The One Signal Rule", "body": "Only one accent (mint) is used for anything non-semantic. Peach/lime/magenta never appear except as warning/success/error.", "section": "colors" },
-      { "name": "The Light Theme Inverts, Never Drifts Rule", "body": "Light mode remaps the same neutral and signal roles onto a paper-on-graphite scheme holding the same contrast targets — it is not a separate palette.", "section": "colors" },
-      { "name": "The No Raw Identifiers Rule", "body": "Enum values and permission keys never render verbatim in UI copy — every one is mapped to a human label before display.", "section": "typography" },
-      { "name": "The Glow-Not-Lift Rule", "body": "Depth reads through color intensity and blur radius, never through a heavier drop shadow.", "section": "elevation" }
+      { "name": "The Signal Discipline Rule", "body": "Each signal hue is reserved for its state. Mint identifies primary actions and focus, while peach, lime, and magenta remain semantic.", "section": "colors" },
+      { "name": "The Mono-is-Data Rule", "body": "Monospace is reserved for IDs, diffs, code, and direct machine feedback.", "section": "typography" },
+      { "name": "The Caps-is-Caption Rule", "body": "Uppercase is reserved for captions, table headers, and section labels.", "section": "typography" },
+      { "name": "The Glow-is-State Rule", "body": "Glow communicates interaction, focus, and state, never static decoration.", "section": "elevation" },
+      { "name": "The Soft-Corner Rule", "body": "Use the established 12, 8, and 4 pixel radius scale. Circles are reserved for status dots and avatars.", "section": "shapes" }
     ],
-    "dos": [
-      "Do reserve JetBrains Mono for diffs, IDs, and code-like fragments only.",
-      "Do map every enum/status value to a plain-language label before it reaches UI copy.",
-      "Do express depth and emphasis through signal-color glow + blur, never through added drop-shadow weight.",
-      "Do keep the signal-mint accent rare — reserve it for the one primary action or focus state per view.",
-      "Do drive animation from real state changes and loop any 'waiting' animation rather than timing it to a guess."
-    ],
-    "donts": [
-      "Don't prefix headings, buttons, or toasts with $, >, #, or any literal shell-prompt glyph.",
-      "Don't write ALL-CAPS or jargon-heavy status/toast copy — use plain sentence-case, human phrasing.",
-      "Don't surface raw snake_case/enum strings directly in UI text.",
-      "Don't introduce a fifth 'decorative' accent color — peach/lime/magenta are semantic-only.",
-      "Don't reach for a heavier box-shadow to convey elevation; use glow."
-    ]
+    "dos": ["Do use monospace for IDs, diffs, code, and machine feedback.", "Do reserve each signal hue for its state and mint for primary actions.", "Do align content to the console grid and vertical rhythm.", "Do use glow to communicate focus, hover, and state."],
+    "donts": ["Don't use monospace for general body copy.", "Don't use uppercase for body text or buttons.", "Don't decorate with signal hues.", "Don't introduce pill shapes or heavy drop shadows."]
   }
 }

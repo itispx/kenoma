@@ -12,20 +12,133 @@ import (
 )
 
 type Querier interface {
+	AbandonDocumentWorkstream(ctx context.Context, arg AbandonDocumentWorkstreamParams) (DocumentWorkstream, error)
+	// Serializes merges of one document: every transaction that moves main takes
+	// this lock first. hashtextextended maps the UUID to a bigint key space.
+	AcquireDocumentMergeLock(ctx context.Context, dollar_1 string) error
+	CloseChangeRequest(ctx context.Context, arg CloseChangeRequestParams) (ChangeRequest, error)
+	CountOrganizationAdmins(ctx context.Context, organizationID uuid.UUID) (int64, error)
+	CountOrganizationMembers(ctx context.Context, organizationID uuid.UUID) (int64, error)
+	CreateCRComment(ctx context.Context, arg CreateCRCommentParams) (CrComment, error)
+	// The caller locks the workstream before this statement, serializing sequence
+	// assignment and expected-parent validation in the surrounding transaction.
+	CreateChangeLog(ctx context.Context, arg CreateChangeLogParams) (ChangeLog, error)
+	CreateChangeRequest(ctx context.Context, arg CreateChangeRequestParams) (ChangeRequest, error)
+	CreateChangeRequestFromWorkstream(ctx context.Context, arg CreateChangeRequestFromWorkstreamParams) (ChangeRequest, error)
+	CreateDocument(ctx context.Context, arg CreateDocumentParams) (Document, error)
+	CreateDocumentRevision(ctx context.Context, arg CreateDocumentRevisionParams) (DocumentRevision, error)
+	CreateDocumentWorkstream(ctx context.Context, arg CreateDocumentWorkstreamParams) (DocumentWorkstream, error)
+	CreateOrganization(ctx context.Context, arg CreateOrganizationParams) (Organization, error)
+	CreateOrganizationInvitation(ctx context.Context, arg CreateOrganizationInvitationParams) (OrganizationInvitation, error)
+	CreateOrganizationMember(ctx context.Context, arg CreateOrganizationMemberParams) (OrganizationMember, error)
 	CreatePasswordResetToken(ctx context.Context, arg CreatePasswordResetTokenParams) (PasswordResetToken, error)
+	CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error)
+	CreateProjectPermissionGrant(ctx context.Context, arg CreateProjectPermissionGrantParams) (ProjectPermissionGrant, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) (RefreshToken, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (UserAccount, error)
+	DeleteExpiredInvitations(ctx context.Context, expiresAt time.Time) (int64, error)
 	DeleteExpiredPasswordResetTokens(ctx context.Context, expiresAt time.Time) (int64, error)
 	DeleteExpiredRefreshTokens(ctx context.Context, expiresAt time.Time) (int64, error)
+	DeleteOrganizationMember(ctx context.Context, id uuid.UUID) error
+	DeleteProjectPermissionGrant(ctx context.Context, arg DeleteProjectPermissionGrantParams) error
+	// Used when a member is removed from an org: their grants on that org's
+	// projects go with them, so removal actually removes access.
+	DeleteUserGrantsInOrganization(ctx context.Context, arg DeleteUserGrantsInOrganizationParams) (int64, error)
+	GetCRComment(ctx context.Context, id uuid.UUID) (CrComment, error)
+	GetChangeLogByID(ctx context.Context, arg GetChangeLogByIDParams) (ChangeLog, error)
+	GetChangeLogForChangeRequest(ctx context.Context, arg GetChangeLogForChangeRequestParams) (ChangeLog, error)
+	GetChangeRequestByID(ctx context.Context, id uuid.UUID) (ChangeRequest, error)
+	GetDeletedOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetDocumentByID(ctx context.Context, id uuid.UUID) (Document, error)
+	GetDocumentByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (Document, error)
+	// Locks an active document while the first immutable version is created, so
+	// two editors cannot both observe an empty head and create revision 1.
+	GetDocumentForInitialVersion(ctx context.Context, id uuid.UUID) (Document, error)
+	GetDocumentRevision(ctx context.Context, arg GetDocumentRevisionParams) (DocumentRevision, error)
+	GetDocumentWorkstreamByID(ctx context.Context, arg GetDocumentWorkstreamByIDParams) (DocumentWorkstream, error)
+	// Read path: no owner filter. Reading a branch needs project access, which
+	// the service checks; writing to one still needs to be its owner.
+	GetDocumentWorkstreamForRead(ctx context.Context, arg GetDocumentWorkstreamForReadParams) (DocumentWorkstream, error)
+	// Locks the active workstream before appending a log or submitting it.
+	GetDocumentWorkstreamForUpdate(ctx context.Context, arg GetDocumentWorkstreamForUpdateParams) (DocumentWorkstream, error)
+	GetLatestChangeLog(ctx context.Context, arg GetLatestChangeLogParams) (ChangeLog, error)
+	GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organization, error)
+	GetOrganizationInvitationByID(ctx context.Context, id uuid.UUID) (OrganizationInvitation, error)
+	GetOrganizationMember(ctx context.Context, arg GetOrganizationMemberParams) (OrganizationMember, error)
+	GetOrganizationMemberByID(ctx context.Context, id uuid.UUID) (OrganizationMember, error)
+	GetPreviousChangeLog(ctx context.Context, arg GetPreviousChangeLogParams) (ChangeLog, error)
+	GetProjectByID(ctx context.Context, id uuid.UUID) (Project, error)
+	GetProjectByIDIncludingDeleted(ctx context.Context, id uuid.UUID) (Project, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
 	GetUserByEmail(ctx context.Context, lower string) (UserAccount, error)
 	GetUserByID(ctx context.Context, id uuid.UUID) (UserAccount, error)
+	GetValidInvitationByTokenHash(ctx context.Context, tokenHash string) (OrganizationInvitation, error)
 	GetValidPasswordResetToken(ctx context.Context, tokenHash string) (PasswordResetToken, error)
 	InvalidateUserPasswordResetTokens(ctx context.Context, userID uuid.UUID) error
+	ListCRComments(ctx context.Context, changeRequestID uuid.UUID) ([]CrComment, error)
+	// Included logs become visible with their Change Request. The caller first
+	// authorizes access to the CR, so these queries scope identity to that CR.
+	ListChangeLogsForChangeRequest(ctx context.Context, id uuid.UUID) ([]ChangeLog, error)
+	// Saved logs are the published part of a branch, so these read paths join
+	// only to prove the log belongs to this document.
+	ListChangeLogsForWorkstream(ctx context.Context, arg ListChangeLogsForWorkstreamParams) ([]ChangeLog, error)
+	// Open CRs are what review pages care about; merged and closed ones are
+	// history the document page lists in full and lets callers group by status.
+	ListChangeRequestsForDocument(ctx context.Context, documentID uuid.UUID) ([]ChangeRequest, error)
+	// The body is deliberately left out: history lists render titles only, and a
+	// long document's full text per row would dwarf every other page's payload.
+	ListDocumentRevisions(ctx context.Context, documentID uuid.UUID) ([]ListDocumentRevisionsRow, error)
+	// Every branch on the document, whoever owns it: a branch is visible to the
+	// whole project, and the caller's project access is checked before this runs.
+	// Active first, then most recently touched, so the list opens on live work.
+	ListDocumentWorkstreams(ctx context.Context, documentID uuid.UUID) ([]ListDocumentWorkstreamsRow, error)
+	// The body is deliberately left out: a list of documents would otherwise carry
+	// a megabyte of Markdown per row for a page that only renders titles.
+	ListDocumentsForProject(ctx context.Context, projectID uuid.UUID) ([]ListDocumentsForProjectRow, error)
+	ListOrganizationInvitations(ctx context.Context, organizationID uuid.UUID) ([]OrganizationInvitation, error)
+	ListOrganizationMembers(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationMembersRow, error)
+	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
+	ListPendingInvitationsForEmail(ctx context.Context, lower string) ([]OrganizationInvitation, error)
+	ListPermissions(ctx context.Context) ([]Permission, error)
+	ListProjectPermissionGrants(ctx context.Context, projectID uuid.UUID) ([]ListProjectPermissionGrantsRow, error)
+	// Org admins see every project in the org. Everyone else sees only what they
+	// hold a grant on, so membership alone conveys no visibility.
+	ListProjectsForUserInOrg(ctx context.Context, arg ListProjectsForUserInOrgParams) ([]Project, error)
+	ListUserPermissionKeysForProject(ctx context.Context, arg ListUserPermissionKeysForProjectParams) ([]string, error)
+	// The status predicate makes "merge" and "close" race-safe without a lock:
+	// whichever statement runs second matches no row and reports the conflict.
+	MarkChangeRequestMerged(ctx context.Context, arg MarkChangeRequestMergedParams) (ChangeRequest, error)
+	MarkInvitationAccepted(ctx context.Context, id uuid.UUID) error
 	MarkPasswordResetTokenUsed(ctx context.Context, id uuid.UUID) error
+	// Called inside the merge transaction, after the per-document advisory lock,
+	// so concurrent merges of the same document serialize here rather than race.
+	NextRevisionSeq(ctx context.Context, documentID uuid.UUID) (int32, error)
+	// Closing a Change Request hands the branch back to its author. Scoped to
+	// 'submitted' so it can never resurrect an abandoned branch.
+	ReopenDocumentWorkstream(ctx context.Context, id uuid.UUID) (DocumentWorkstream, error)
+	RestoreDocument(ctx context.Context, id uuid.UUID) error
+	RestoreOrganization(ctx context.Context, id uuid.UUID) error
+	RestoreProject(ctx context.Context, id uuid.UUID) error
 	RevokeAllUserRefreshTokens(ctx context.Context, userID uuid.UUID) error
+	RevokeInvitation(ctx context.Context, id uuid.UUID) error
 	RevokeRefreshToken(ctx context.Context, id uuid.UUID) error
+	// Moves main forward. The document row's title and content_markdown are kept
+	// as an exact mirror of the head revision so the existing single-row reads
+	// (list pages, GET document) never need a join.
+	SetDocumentHead(ctx context.Context, arg SetDocumentHeadParams) error
+	SoftDeleteCRComment(ctx context.Context, id uuid.UUID) error
+	SoftDeleteDocument(ctx context.Context, id uuid.UUID) error
+	SoftDeleteOrganization(ctx context.Context, id uuid.UUID) error
+	SoftDeleteProject(ctx context.Context, id uuid.UUID) error
+	SubmitDocumentWorkstream(ctx context.Context, arg SubmitDocumentWorkstreamParams) (DocumentWorkstream, error)
+	TouchDocumentWorkstream(ctx context.Context, id uuid.UUID) error
+	UpdateOrganization(ctx context.Context, arg UpdateOrganizationParams) (Organization, error)
+	UpdateOrganizationMemberRole(ctx context.Context, arg UpdateOrganizationMemberRoleParams) (OrganizationMember, error)
+	UpdateProjectName(ctx context.Context, arg UpdateProjectNameParams) (Project, error)
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
+	// The whole authorization model in one query: an org admin passes on any key
+	// for any project in their org, anyone else passes only with a matching grant.
+	UserHasProjectPermission(ctx context.Context, arg UserHasProjectPermissionParams) (bool, error)
 }
 
 var _ Querier = (*Queries)(nil)

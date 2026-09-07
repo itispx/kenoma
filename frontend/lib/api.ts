@@ -3,7 +3,29 @@
 // doesn't bounce the user to /login mid-session.
 "use client";
 
-import type { ApiEnvelope, AuthResponse } from "./types";
+import type {
+  ApiEnvelope,
+  AuthResponse,
+  ChangeRequestDetail,
+  ChangeRequestSummary,
+  ChangeLog,
+  CRComment,
+  DiffSpan,
+  Doc,
+  DocSummary,
+  Invitation,
+  Organization,
+  OrgMember,
+  OrgRole,
+  Permission,
+  PermissionGrant,
+  PermissionKey,
+  Project,
+  Revision,
+  RevisionSummary,
+  Workstream,
+  WorkstreamSummary,
+} from "./types";
 
 export const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080/api/v1";
@@ -59,7 +81,10 @@ interface RequestOptions extends Omit<RequestInit, "body"> {
   skipAuthRetry?: boolean;
 }
 
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
+async function request<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { body, skipAuthRetry, headers, ...rest } = options;
 
   const finalHeaders = new Headers(headers);
@@ -106,17 +131,292 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
   return parsed.data as T;
 }
 
+// requestForm uploads a multipart file (docx imports). The Content-Type
+// header must stay unset: the browser fills it in together with the multipart
+// boundary, and a hand-written value would break parsing server-side.
+async function requestForm<T>(
+  path: string,
+  field: string,
+  file: File,
+): Promise<T> {
+  const form = new FormData();
+  form.append(field, file);
+  const headers = new Headers();
+  if (accessToken) {
+    headers.set("Authorization", `Bearer ${accessToken}`);
+  }
+  const res = await fetch(`${API_BASE_URL}${path}`, {
+    method: "POST",
+    headers,
+    credentials: "include",
+    body: form,
+  });
+  if (res.status === 401) {
+    const refreshed = await rawRefresh();
+    if (refreshed) {
+      return requestForm<T>(path, field, file);
+    }
+    accessToken = null;
+    emitUnauthenticated();
+    throw new ApiError(401, "session expired");
+  }
+  const parsed = (await res.json()) as ApiEnvelope<T>;
+  if (!res.ok) {
+    throw new ApiError(res.status, parsed.error?.message ?? res.statusText);
+  }
+  return parsed.data as T;
+}
+
 // --- Auth ------------------------------------------------------------------
 
 export const auth = {
   register: (email: string, password: string, name: string) =>
-    request<AuthResponse>("/auth/register", { method: "POST", body: { email, password, name } }),
+    request<AuthResponse>("/auth/register", {
+      method: "POST",
+      body: { email, password, name },
+    }),
   login: (email: string, password: string) =>
-    request<AuthResponse>("/auth/login", { method: "POST", body: { email, password } }),
+    request<AuthResponse>("/auth/login", {
+      method: "POST",
+      body: { email, password },
+    }),
   refresh: () => rawRefresh(),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   requestPasswordReset: (email: string) =>
-    request<{ message: string }>("/auth/password-reset/request", { method: "POST", body: { email } }),
+    request<{ message: string }>("/auth/password-reset/request", {
+      method: "POST",
+      body: { email },
+    }),
   confirmPasswordReset: (token: string, password: string) =>
-    request<void>("/auth/password-reset/confirm", { method: "POST", body: { token, password } }),
+    request<void>("/auth/password-reset/confirm", {
+      method: "POST",
+      body: { token, password },
+    }),
+};
+
+const q = (value: string) => encodeURIComponent(value);
+const requestSpans = (path: string) =>
+  request<{ spans: DiffSpan[] }>(path).then((response) => response.spans);
+
+export const orgs = {
+  list: () => request<Organization[]>("/orgs"),
+  create: (name: string) =>
+    request<Organization>("/orgs", { method: "POST", body: { name } }),
+  get: (id: string) => request<Organization>(`/orgs/${q(id)}`),
+  update: (
+    id: string,
+    patch: { name?: string; members_can_invite?: boolean },
+  ) =>
+    request<Organization>(`/orgs/${q(id)}`, { method: "PATCH", body: patch }),
+  remove: (id: string) => request<void>(`/orgs/${q(id)}`, { method: "DELETE" }),
+  restore: (id: string) =>
+    request<void>(`/orgs/${q(id)}/restore`, { method: "POST" }),
+  listMembers: (id: string) => request<OrgMember[]>(`/orgs/${q(id)}/members`),
+  updateMemberRole: (id: string, memberId: string, role: OrgRole) =>
+    request<{ id: string; role: OrgRole }>(
+      `/orgs/${q(id)}/members/${q(memberId)}`,
+      { method: "PATCH", body: { role } },
+    ),
+  removeMember: (id: string, memberId: string) =>
+    request<void>(`/orgs/${q(id)}/members/${q(memberId)}`, {
+      method: "DELETE",
+    }),
+  listInvitations: (id: string) =>
+    request<Invitation[]>(`/orgs/${q(id)}/invitations`),
+  invite: (id: string, email: string, role: OrgRole) =>
+    request<Invitation>(`/orgs/${q(id)}/invitations`, {
+      method: "POST",
+      body: { email, role },
+    }),
+  revokeInvitation: (id: string, invitationId: string) =>
+    request<void>(`/orgs/${q(id)}/invitations/${q(invitationId)}`, {
+      method: "DELETE",
+    }),
+  acceptInvitation: (token: string) =>
+    request<Organization>("/invitations/accept", {
+      method: "POST",
+      body: { token },
+    }),
+};
+export const projects = {
+  listForOrg: (id: string) => request<Project[]>(`/orgs/${q(id)}/projects`),
+  create: (id: string, name: string) =>
+    request<Project>(`/orgs/${q(id)}/projects`, {
+      method: "POST",
+      body: { name },
+    }),
+  get: (id: string) => request<Project>(`/projects/${q(id)}`),
+  rename: (id: string, name: string) =>
+    request<Project>(`/projects/${q(id)}`, { method: "PATCH", body: { name } }),
+  remove: (id: string) =>
+    request<void>(`/projects/${q(id)}`, { method: "DELETE" }),
+  restore: (id: string) =>
+    request<void>(`/projects/${q(id)}/restore`, { method: "POST" }),
+  myPermissions: (id: string) =>
+    request<PermissionKey[]>(`/projects/${q(id)}/my-permissions`),
+};
+export const documents = {
+  listForProject: (projectId: string) =>
+    request<DocSummary[]>(`/projects/${q(projectId)}/documents`),
+  create: (projectId: string, title: string) =>
+    request<Doc>(`/projects/${q(projectId)}/documents`, {
+      method: "POST",
+      body: { title },
+    }),
+  get: (id: string) => request<Doc>(`/documents/${q(id)}`),
+  saveInitialVersion: (
+    id: string,
+    draft: { title: string; content_markdown: string },
+  ) =>
+    request<Doc>(`/documents/${q(id)}/initial-version`, {
+      method: "POST",
+      body: draft,
+    }),
+  // Imports a docx as a brand new document; its converted Markdown becomes
+  // revision 1 of main directly.
+  importNew: (projectId: string, file: File) =>
+    requestForm<Doc>(`/projects/${q(projectId)}/documents/import`, "file", file),
+  // Imports a docx as a proposed new version: opens an import Change Request.
+  importRevision: (documentId: string, file: File) =>
+    requestForm<ChangeRequestDetail>(
+      `/documents/${q(documentId)}/import`,
+      "file",
+      file,
+    ),
+  remove: (id: string) =>
+    request<void>(`/documents/${q(id)}`, { method: "DELETE" }),
+  restore: (id: string) =>
+    request<void>(`/documents/${q(id)}/restore`, { method: "POST" }),
+  revisions: {
+    list: (documentId: string) =>
+      request<RevisionSummary[]>(`/documents/${q(documentId)}/revisions`),
+    get: (documentId: string, revisionId: string) =>
+      request<Revision>(
+        `/documents/${q(documentId)}/revisions/${q(revisionId)}`,
+      ),
+    diff: (documentId: string, fromRevisionId: string, toRevisionId: string) =>
+      requestSpans(
+        `/documents/${q(documentId)}/diff?from=${q(fromRevisionId)}&to=${q(toRevisionId)}`,
+      ),
+  },
+};
+
+export const changeRequests = {
+  open: (
+    documentId: string,
+    proposal: {
+      workstream_id: string;
+      expected_latest_change_log_id: string;
+    },
+  ) =>
+    request<ChangeRequestDetail>(
+      `/documents/${q(documentId)}/change-requests`,
+      { method: "POST", body: proposal },
+    ),
+  listForDocument: (documentId: string) =>
+    request<ChangeRequestSummary[]>(
+      `/documents/${q(documentId)}/change-requests`,
+    ),
+  get: (id: string) => request<ChangeRequestDetail>(`/change-requests/${q(id)}`),
+  merge: (
+    id: string,
+    resolution?: { resolved_title?: string; resolved_content_markdown?: string },
+  ) =>
+    request<ChangeRequestDetail & { created_rev_seq: number }>(
+      `/change-requests/${q(id)}/merge`,
+      { method: "POST", body: resolution ?? {} },
+    ),
+  close: (id: string, note = "") =>
+    request<ChangeRequestDetail>(`/change-requests/${q(id)}/close`, {
+      method: "POST",
+      body: { note },
+    }),
+  diff: (id: string, side: "branch" | "main") =>
+    requestSpans(`/change-requests/${q(id)}/diff?side=${side}`),
+  changeLogs: {
+    list: (id: string) =>
+      request<ChangeLog[]>(`/change-requests/${q(id)}/change-logs`),
+    diff: (id: string, changeLogId: string) =>
+      requestSpans(
+        `/change-requests/${q(id)}/change-logs/${q(changeLogId)}/diff`,
+      ),
+  },
+  comments: {
+    list: (id: string) =>
+      request<CRComment[]>(`/change-requests/${q(id)}/comments`),
+    add: (
+      id: string,
+      body: string,
+      opts?: { parent_id?: string; op_index?: number; op_end_index?: number },
+    ) =>
+      request<CRComment>(`/change-requests/${q(id)}/comments`, {
+        method: "POST",
+        body: { body, ...opts },
+      }),
+    remove: (crId: string, commentId: string) =>
+      request<void>(
+        `/change-requests/${q(crId)}/comments/${q(commentId)}`,
+        { method: "DELETE" },
+      ),
+  },
+};
+export const workstreams = {
+  list: (documentId: string) =>
+    request<WorkstreamSummary[]>(`/documents/${q(documentId)}/workstreams`),
+  get: (documentId: string, workstreamId: string) =>
+    request<Workstream>(
+      `/documents/${q(documentId)}/workstreams/${q(workstreamId)}`,
+    ),
+  create: (documentId: string, name: string, baseRevisionId: string) =>
+    request<Workstream>(`/documents/${q(documentId)}/workstreams`, {
+      method: "POST",
+      body: { name, base_revision_id: baseRevisionId },
+    }),
+  append: (
+    documentId: string,
+    workstreamId: string,
+    input: {
+      expected_parent_change_log_id?: string;
+      message: string;
+      title: string;
+      content_markdown: string;
+    },
+  ) =>
+    request<ChangeLog>(
+      `/documents/${q(documentId)}/workstreams/${q(workstreamId)}/change-logs`,
+      { method: "POST", body: input },
+    ),
+  diff: (documentId: string, workstreamId: string, changeLogId?: string) =>
+    requestSpans(
+      `/documents/${q(documentId)}/workstreams/${q(workstreamId)}/diff${
+        changeLogId ? `?change_log_id=${q(changeLogId)}` : ""
+      }`,
+    ),
+  reconcileDiff: (documentId: string, workstreamId: string, contentMarkdown: string) =>
+    request<{ spans: DiffSpan[] }>(
+      `/documents/${q(documentId)}/workstreams/${q(workstreamId)}/reconcile-diff`,
+      { method: "POST", body: { content_markdown: contentMarkdown } },
+    ).then((response) => response.spans),
+  abandon: (documentId: string, workstreamId: string) =>
+    request<void>(
+      `/documents/${q(documentId)}/workstreams/${q(workstreamId)}`,
+      { method: "DELETE" },
+    ),
+};
+export const permissions = {
+  catalog: () => request<Permission[]>("/permissions"),
+};
+export const grants = {
+  list: (id: string) =>
+    request<PermissionGrant[]>(`/projects/${q(id)}/permissions`),
+  grant: (id: string, userId: string, permissionKey: PermissionKey) =>
+    request<void>(`/projects/${q(id)}/permissions`, {
+      method: "POST",
+      body: { user_id: userId, permission_key: permissionKey },
+    }),
+  revoke: (id: string, userId: string, permissionKey: PermissionKey) =>
+    request<void>(
+      `/projects/${q(id)}/permissions?user_id=${q(userId)}&permission_key=${q(permissionKey)}`,
+      { method: "DELETE" },
+    ),
 };

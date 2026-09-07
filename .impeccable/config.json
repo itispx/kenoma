@@ -13,5 +13,12 @@
         "reason": "Blockquote left-border is Markdown rendering convention (kenoma-prose/kenoma-diff), not a UI card accent"
       }
     ]
+  },
+  "hook": {
+    "enabled": true,
+    "limits": {
+      "maxFindings": 5,
+      "maxChars": 8000
+    }
   }
 }

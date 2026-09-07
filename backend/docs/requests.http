@@ -1,0 +1,138 @@
+# Kenoma API, by hand. Works with the VS Code REST Client and JetBrains HTTP
+# Client. Run the requests top to bottom: each one feeds the next through the
+# @variables below.
+#
+# There is no automated test suite yet, so this file is the verification script.
+# The stack must be up (`make up`) and migrated (`make db-up`).
+
+@host = http://localhost:8080/api/v1
+@email = owner@example.com
+@password = correct-horse-battery
+@token = paste the access_token from the register or login response
+@orgId = paste an organization id
+@projectId = paste a project id
+@documentId = paste a document id
+@updatedAt = paste a document's updated_at, exactly as returned
+
+### Health
+GET http://localhost:8080/healthz
+
+### Register (also creates the caller's personal organization)
+POST {{host}}/auth/register
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}", "name": "Owner" }
+
+### Log in
+POST {{host}}/auth/login
+Content-Type: application/json
+
+{ "email": "{{email}}", "password": "{{password}}" }
+
+### List organizations (copy an id into @orgId)
+GET {{host}}/orgs
+Authorization: Bearer {{token}}
+
+### Create a project (copy the id into @projectId)
+POST {{host}}/orgs/{{orgId}}/projects
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "name": "Handbook" }
+
+# --- Documents ---------------------------------------------------------------
+
+### Create a headless document (copy id into @documentId)
+POST {{host}}/projects/{{projectId}}/documents
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "title": "Untitled document" }
+
+### List documents (no bodies in this response, by design)
+GET {{host}}/projects/{{projectId}}/documents
+Authorization: Bearer {{token}}
+
+### Get one document (this one does carry the body)
+GET {{host}}/documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+### Create a private workstream after the first version exists
+POST {{host}}/documents/{{documentId}}/workstreams
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "base_revision_id": "{{headRevisionId}}" }
+
+### Save an immutable Change Log checkpoint
+POST {{host}}/documents/{{documentId}}/workstreams/{{workstreamId}}/change-logs
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "expected_parent_change_log_id": "{{previousChangeLogId}}",
+  "message": "Clarify the approval sequence",
+  "title": "Team handbook",
+  "content_markdown": "# Handbook\n\nUpdated approval sequence.\n"
+}
+
+### Review the aggregate base-to-latest Change Log diff
+GET {{host}}/documents/{{documentId}}/workstreams/{{workstreamId}}/diff
+Authorization: Bearer {{token}}
+
+### Create one Change Request from every saved Change Log
+POST {{host}}/documents/{{documentId}}/change-requests
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "workstream_id": "{{workstreamId}}",
+  "expected_latest_change_log_id": "{{latestChangeLogId}}"
+}
+
+### Save the first version. Expect 201
+POST {{host}}/documents/{{documentId}}/initial-version
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{
+  "title": "Team handbook",
+  "content_markdown": "# Handbook\n\nFirst paragraph with **bold** text.\n"
+}
+
+### Saving the first version again. Expect 409
+POST {{host}}/documents/{{documentId}}/initial-version
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "title": "Another title", "content_markdown": "Another first version" }
+
+### Empty title. Expect 400
+POST {{host}}/documents/{{documentId}}/initial-version
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "title": "   ", "content_markdown": "Body" }
+
+### Oversized body. Expect 413 (paste over a megabyte of text to check)
+# The service rejects anything past 1MB of Markdown; the transport allows 2MB so
+# that this comes back as a message rather than a truncated-body 400.
+POST {{host}}/documents/{{documentId}}/initial-version
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "title": "Large draft", "content_markdown": "xxxx…more than 1MB…xxxx" }
+
+### Soft delete. Expect 204, and the document leaves the list
+DELETE {{host}}/documents/{{documentId}}
+Authorization: Bearer {{token}}
+
+### Restore. Expect 204, and it comes back
+POST {{host}}/documents/{{documentId}}/restore
+Authorization: Bearer {{token}}
+
+### As a user with no grant on the project, every route above answers 404.
+# A denial is reported as "not found" on purpose: saying "forbidden" would
+# confirm the id exists.
+GET {{host}}/documents/{{documentId}}
+Authorization: Bearer paste a second user's access token
