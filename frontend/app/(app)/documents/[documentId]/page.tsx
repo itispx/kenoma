@@ -787,8 +787,6 @@ function DocumentView({
         </div>
       )}
 
-      <h1>change 1</h1>
-
       {/* --- Header (hidden while editing: the branch brings its own header,
               and document-level navigation and deletion are not moves anyone
               should make from inside an open draft) --- */}
