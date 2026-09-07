@@ -87,8 +87,10 @@ export interface Doc {
 }
 
 // The list endpoint leaves the body out on purpose: a project's document list
-// would otherwise carry every document's full text.
-export type DocSummary = Omit<Doc, "content_markdown">;
+// would otherwise carry every document's full text. deleted_at is only present
+// on the deleted-documents list, which is how a restore surface shows what was
+// taken out without guessing from updated_at.
+export type DocSummary = Omit<Doc, "content_markdown"> & { deleted_at?: string };
 
 // --- Versioning: revisions, branches, Change Requests ----------------------
 

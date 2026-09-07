@@ -217,6 +217,22 @@ func (s *Service) ListForProject(ctx context.Context, userID, projectID uuid.UUI
 	return s.Queries.ListDocumentsForProject(ctx, projectID)
 }
 
+// ListDeletedForProject returns the project's soft-deleted documents so a
+// manager can find and restore something that was taken out. Seeing the
+// deleted list is itself a docs:manage act: it names rows the rest of the
+// project no longer sees, so the same permission that removes and restores
+// documents gates the list.
+func (s *Service) ListDeletedForProject(ctx context.Context, userID, projectID uuid.UUID) ([]db.ListDocumentsForProjectRow, error) {
+	allowed, err := s.Checker.HasPermission(ctx, userID, projectID, permissions.KeyManage)
+	if err != nil {
+		return nil, err
+	}
+	if !allowed {
+		return nil, permissions.ErrDenied
+	}
+	return s.Queries.ListDeletedDocumentsForProject(ctx, projectID)
+}
+
 // getVisibleDoc loads a live document and checks the caller can see its
 // project at all. Every per-document read path funnels through here, which is
 // also why a denied caller gets ErrNotFound either way: the check happens

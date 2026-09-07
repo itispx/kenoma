@@ -80,6 +80,9 @@ func (s *Server) registerRoutes() {
 
 	// --- Documents ---
 	s.mux.HandleFunc("GET /api/v1/projects/{projectId}/documents", s.authed(s.handleListDocuments))
+	// Deleted documents, for managers restoring a row that was taken out. A
+	// separate path keeps the ordinary list cheap and unambiguous.
+	s.mux.HandleFunc("GET /api/v1/projects/{projectId}/documents/deleted", s.authed(s.handleListDeletedDocuments))
 	s.mux.HandleFunc("POST /api/v1/projects/{projectId}/documents", s.authed(s.handleCreateDocument))
 	// Import: a new document lands directly on main; a docx for an existing
 	// document opens an import Change Request instead.

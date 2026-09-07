@@ -295,6 +295,9 @@ export const projects = {
 export const documents = {
   listForProject: (projectId: string) =>
     request<DocSummary[]>(`/projects/${q(projectId)}/documents`),
+  // Soft-deleted documents, for managers restoring a row that was taken out.
+  listDeletedForProject: (projectId: string) =>
+    request<DocSummary[]>(`/projects/${q(projectId)}/documents/deleted`),
   create: (projectId: string, title: string) =>
     request<Doc>(`/projects/${q(projectId)}/documents`, {
       method: "POST",

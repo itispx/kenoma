@@ -18,16 +18,42 @@ export default function ProjectDocumentsPage({
   const { projectId } = use(params),
     router = useRouter();
   const [docs, setDocs] = useState<DocSummary[] | null>(null);
+  const [deletedDocs, setDeletedDocs] = useState<DocSummary[] | null>(null);
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
+  const [restoring, setRestoring] = useState<string | null>(null);
   const [importOpen, setImportOpen] = useState(false);
   const { has, loading } = usePermissions(projectId);
+  const canManage = !loading && has("docs:manage");
   useEffect(() => {
     documents
       .listForProject(projectId)
       .then(setDocs)
       .catch(() => setError("Could not load documents."));
   }, [projectId]);
+  // The deleted list names rows the rest of the project no longer sees, so it
+  // loads only for managers, under the same permission that removes and
+  // restores documents.
+  useEffect(() => {
+    if (!canManage) return;
+    documents
+      .listDeletedForProject(projectId)
+      .then(setDeletedDocs)
+      .catch(() => setDeletedDocs([]));
+  }, [canManage, projectId]);
+  async function restoreDoc(id: string) {
+    setRestoring(id);
+    try {
+      await documents.restore(id);
+      setDeletedDocs((prev) => (prev ? prev.filter((d) => d.id !== id) : prev));
+      // The restored document re-enters the live list, so refresh it too.
+      documents.listForProject(projectId).then(setDocs).catch(() => {});
+    } catch {
+      toast.error("Could not restore this document.");
+    } finally {
+      setRestoring(null);
+    }
+  }
   async function create() {
     setCreating(true);
     try {
@@ -109,6 +135,48 @@ export default function ProjectDocumentsPage({
             </li>
           ))}
         </ul>
+      )}
+      {canManage && deletedDocs && deletedDocs.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-baseline justify-between gap-4">
+            <span className="text-xs tracking-widest text-console-400 uppercase">
+              Recently deleted
+            </span>
+            <span className="text-xs text-console-400">
+              {deletedDocs.length}{" "}
+              {deletedDocs.length === 1 ? "document" : "documents"}
+            </span>
+          </div>
+          {/* Lighter than the live list on purpose: these rows are not work
+              someone is heading into, they are a recovery surface. */}
+          <ul className="surface-panel divide-y divide-console-600/60">
+            {deletedDocs.map((d) => (
+              <li
+                key={d.id}
+                className="flex items-center justify-between gap-4 px-gutter py-3"
+              >
+                <div className="flex min-w-0 items-baseline gap-3">
+                  <span className="truncate text-sm text-console-300">
+                    {d.title}
+                  </span>
+                  {d.deleted_at && (
+                    <span className="shrink-0 font-mono text-xs text-console-400">
+                      {d.deleted_at.slice(0, 16).replace("T", " ")}
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void restoreDoc(d.id)}
+                  disabled={restoring === d.id}
+                  className="focus-console shrink-0 rounded-sm border border-console-500 px-2 py-1 text-xs text-console-200 transition-colors duration-150 hover:border-signal-info hover:text-signal-info disabled:pointer-events-none disabled:opacity-50"
+                >
+                  {restoring === d.id ? "Restoring…" : "Restore"}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       <ImportDialog
         open={importOpen}

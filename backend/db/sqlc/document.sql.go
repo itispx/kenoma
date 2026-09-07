@@ -160,6 +160,44 @@ func (q *Queries) ListDocumentsForProject(ctx context.Context, projectID uuid.UU
 	return items, nil
 }
 
+const listDeletedDocumentsForProject = `-- name: ListDeletedDocumentsForProject :many
+SELECT id, project_id, title, head_revision_id, created_by, created_at, updated_at, deleted_at
+FROM document
+WHERE project_id = $1 AND deleted_at IS NOT NULL
+ORDER BY updated_at DESC
+`
+
+// The same summary shape as ListDocumentsForProject, but for soft-deleted
+// rows, so a manager can find and restore a document that was taken out.
+func (q *Queries) ListDeletedDocumentsForProject(ctx context.Context, projectID uuid.UUID) ([]ListDocumentsForProjectRow, error) {
+	rows, err := q.db.Query(ctx, listDeletedDocumentsForProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListDocumentsForProjectRow{}
+	for rows.Next() {
+		var i ListDocumentsForProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.Title,
+			&i.HeadRevisionID,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const restoreDocument = `-- name: RestoreDocument :exec
 UPDATE document
 SET deleted_at = NULL, updated_at = now()

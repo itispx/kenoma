@@ -95,6 +95,9 @@ type Querier interface {
 	// The body is deliberately left out: a list of documents would otherwise carry
 	// a megabyte of Markdown per row for a page that only renders titles.
 	ListDocumentsForProject(ctx context.Context, projectID uuid.UUID) ([]ListDocumentsForProjectRow, error)
+	// The same summary shape as ListDocumentsForProject, but for soft-deleted
+	// rows, so a manager can find and restore a document that was taken out.
+	ListDeletedDocumentsForProject(ctx context.Context, projectID uuid.UUID) ([]ListDocumentsForProjectRow, error)
 	ListOrganizationInvitations(ctx context.Context, organizationID uuid.UUID) ([]OrganizationInvitation, error)
 	ListOrganizationMembers(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationMembersRow, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)

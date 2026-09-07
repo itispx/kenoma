@@ -127,6 +127,10 @@ Authorization: Bearer {{token}}
 DELETE {{host}}/documents/{{documentId}}
 Authorization: Bearer {{token}}
 
+### List the project's deleted documents (the one above, with deleted_at)
+GET {{host}}/projects/{{projectId}}/documents/deleted
+Authorization: Bearer {{token}}
+
 ### Restore. Expect 204, and it comes back
 POST {{host}}/documents/{{documentId}}/restore
 Authorization: Bearer {{token}}

@@ -87,6 +87,38 @@ func toDocumentSummaryResponse(d db.ListDocumentsForProjectRow) documentSummaryR
 	}
 }
 
+// deletedDocumentResponse is the deleted-list shape: the summary plus when the
+// row was taken out, so a restore surface can show what happened without
+// guessing from updated_at.
+type deletedDocumentResponse struct {
+	ID             string  `json:"id"`
+	ProjectID      string  `json:"project_id"`
+	Title          string  `json:"title"`
+	HeadRevisionID *string `json:"head_revision_id"`
+	CreatedBy      string  `json:"created_by"`
+	CreatedAt      string  `json:"created_at"`
+	UpdatedAt      string  `json:"updated_at"`
+	DeletedAt      string  `json:"deleted_at"`
+}
+
+func toDeletedDocumentResponse(d db.ListDocumentsForProjectRow) deletedDocumentResponse {
+	var head *string
+	if d.HeadRevisionID.Valid {
+		value := d.HeadRevisionID.UUID.String()
+		head = &value
+	}
+	return deletedDocumentResponse{
+		ID:             d.ID.String(),
+		ProjectID:      d.ProjectID.String(),
+		Title:          d.Title,
+		HeadRevisionID: head,
+		CreatedBy:      d.CreatedBy.String(),
+		CreatedAt:      d.CreatedAt.Format(time.RFC3339Nano),
+		UpdatedAt:      d.UpdatedAt.Format(time.RFC3339Nano),
+		DeletedAt:      d.DeletedAt.Time.Format(time.RFC3339Nano),
+	}
+}
+
 type createDocumentRequest struct {
 	Title string `json:"title"`
 }
@@ -145,6 +177,27 @@ func (s *Server) handleListDocuments(w http.ResponseWriter, r *http.Request) {
 	out := make([]documentSummaryResponse, 0, len(rows))
 	for _, d := range rows {
 		out = append(out, toDocumentSummaryResponse(d))
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// handleListDeletedDocuments lists a project's soft-deleted documents so a
+// manager can restore one. Gated on docs:manage like delete and restore
+// themselves: the deleted list is the only place those rows are named, so it
+// is not for everyone.
+func (s *Server) handleListDeletedDocuments(w http.ResponseWriter, r *http.Request) {
+	userID, projectID, ok := callerAndPathID(w, r, "projectId")
+	if !ok {
+		return
+	}
+	rows, err := s.documentSvc.ListDeletedForProject(r.Context(), userID, projectID)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	out := make([]deletedDocumentResponse, 0, len(rows))
+	for _, d := range rows {
+		out = append(out, toDeletedDocumentResponse(d))
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
