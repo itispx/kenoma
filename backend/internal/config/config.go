@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -20,6 +21,9 @@ type Config struct {
 	CookieSecure     bool   // false only for local http dev; refresh cookie needs Secure in production (SameSite=None requires it)
 	ResendAPIKey     string // empty means no Resend account configured yet; falls back to a no-op sender that logs instead of sending
 	EmailFromAddress string // Resend's sandbox sender until a domain is verified; swapping to a real domain is config-only
+	AuthRateLimit    int           // max auth requests per IP per window; 0 disables the limiter
+	AuthRateWindow   time.Duration // the fixed window the per-IP auth counter spans
+	TrustProxy       bool          // true when a reverse proxy sets X-Forwarded-For and its address may be trusted as the client's
 }
 
 func Load() (*Config, error) {
@@ -63,7 +67,31 @@ func Load() (*Config, error) {
 	cfg.InvitationTTL = invitationTTL
 	cfg.PasswordResetTTL = passwordResetTTL
 
+	authRate, err := parseIntEnv("AUTH_RATE_LIMIT", 20)
+	if err != nil {
+		return nil, err
+	}
+	authWindow, err := parseDurationEnv("AUTH_RATE_WINDOW", time.Minute)
+	if err != nil {
+		return nil, err
+	}
+	cfg.AuthRateLimit = authRate
+	cfg.AuthRateWindow = authWindow
+	cfg.TrustProxy = getEnv("TRUST_PROXY", "false") == "true"
+
 	return cfg, nil
+}
+
+func parseIntEnv(key string, fallback int) (int, error) {
+	v := os.Getenv(key)
+	if v == "" {
+		return fallback, nil
+	}
+	n, err := strconv.Atoi(v)
+	if err != nil || n < 0 {
+		return 0, fmt.Errorf("invalid integer for %s: %q", key, v)
+	}
+	return n, nil
 }
 
 func getEnv(key, fallback string) string {

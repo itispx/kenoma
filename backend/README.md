@@ -20,6 +20,9 @@ immutable-revision review workflow with redline diffs, and docx/PDF export.
 - **Pandoc** (subprocess) for docx <-> Markdown <-> PDF conversion
 - **sergi/go-diff** (diff-match-patch) for redline diffs, semantic-cleanup pass
 - JWT access tokens + opaque, hashed, rotating refresh tokens
+- In-memory per-IP rate limiting on the public auth endpoints (register,
+  login, refresh, logout, password reset) — see `AUTH_RATE_LIMIT`/
+  `AUTH_RATE_WINDOW`/`TRUST_PROXY` in `../.env.example`
 
 ## Prerequisites
 
@@ -215,7 +218,6 @@ state.
 
 - Conversions and external API calls run synchronously in the request; see
   "Architecture" above re: moving to a background queue for scale.
-- No rate limiting on auth endpoints.
 - No automated test suite yet — see the "Verification" section of the
   original build plan for the manual walkthrough this was validated against
   (also captured in `docs/requests.http`).

@@ -63,7 +63,10 @@ or a plain emailed-redline workflow doesn't provide by default.
 - No optimistic UI — every mutation waits for the backend response.
 - Conversions and reviews run synchronously in the request today (no
   background job queue yet); acceptable at current scale.
-- No rate limiting on auth endpoints yet.
+- Public auth endpoints (register/login/refresh/logout/password reset) are
+  rate-limited per IP with an in-memory fixed-window limiter, configurable via
+  `AUTH_RATE_LIMIT`/`AUTH_RATE_WINDOW` (and `TRUST_PROXY` behind a reverse
+  proxy).
 - Terminology: "organization" (org) → "project" → "document" → "revision"
   (draft / in_review / approved states) → "comment" (with a diff anchor) →
   "permission grant" (`docs:import`, `docs:edit`, `docs:submit_review`,

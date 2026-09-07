@@ -6,6 +6,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/kenoma/backend/internal/config"
+	"github.com/kenoma/backend/internal/middleware"
 	authsvc "github.com/kenoma/backend/internal/services/auth"
 	"github.com/kenoma/backend/internal/services/crs"
 	"github.com/kenoma/backend/internal/services/documents"
@@ -27,6 +28,7 @@ type Server struct {
 	documentSvc   *documents.Service
 	crSvc         *crs.Service
 	workstreamSvc *workstreams.Service
+	authLimiter   *middleware.RateLimiter // nil when AUTH_RATE_LIMIT=0; guards the public auth routes
 }
 
 func NewServer(
@@ -49,6 +51,9 @@ func NewServer(
 		documentSvc:   documentSvc,
 		crSvc:         crSvc,
 		workstreamSvc: workstreamSvc,
+	}
+	if cfg.AuthRateLimit > 0 {
+		s.authLimiter = middleware.NewRateLimiter(cfg.AuthRateLimit, cfg.AuthRateWindow)
 	}
 	s.registerRoutes()
 	return s

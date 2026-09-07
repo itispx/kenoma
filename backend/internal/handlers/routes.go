@@ -27,16 +27,28 @@ func (s *Server) authed(h http.HandlerFunc) http.HandlerFunc {
 	return middleware.RequireAuth(s.cfg, h).ServeHTTP
 }
 
+// authLimited wraps a handler in the auth rate limiter. It is the public
+// surface an attacker can hammer without a session, so login/register/reset
+// go through it (and through it only — they have no RequireAuth to add).
+// AUTH_RATE_LIMIT=0 disables the limiter, which is how tests and single-user
+// dev machines stay unbothered.
+func (s *Server) authLimited(h http.HandlerFunc) http.HandlerFunc {
+	if s.authLimiter == nil {
+		return h
+	}
+	return middleware.RateLimit(s.authLimiter, s.cfg.TrustProxy, h).ServeHTTP
+}
+
 func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("GET /healthz", s.handleHealthz)
 
 	// --- Public auth ---
-	s.mux.HandleFunc("POST /api/v1/auth/register", s.handleRegister)
-	s.mux.HandleFunc("POST /api/v1/auth/login", s.handleLogin)
-	s.mux.HandleFunc("POST /api/v1/auth/refresh", s.handleRefresh)
-	s.mux.HandleFunc("POST /api/v1/auth/logout", s.handleLogout)
-	s.mux.HandleFunc("POST /api/v1/auth/password-reset/request", s.handleRequestPasswordReset)
-	s.mux.HandleFunc("POST /api/v1/auth/password-reset/confirm", s.handleConfirmPasswordReset)
+	s.mux.HandleFunc("POST /api/v1/auth/register", s.authLimited(s.handleRegister))
+	s.mux.HandleFunc("POST /api/v1/auth/login", s.authLimited(s.handleLogin))
+	s.mux.HandleFunc("POST /api/v1/auth/refresh", s.authLimited(s.handleRefresh))
+	s.mux.HandleFunc("POST /api/v1/auth/logout", s.authLimited(s.handleLogout))
+	s.mux.HandleFunc("POST /api/v1/auth/password-reset/request", s.authLimited(s.handleRequestPasswordReset))
+	s.mux.HandleFunc("POST /api/v1/auth/password-reset/confirm", s.authLimited(s.handleConfirmPasswordReset))
 
 	// --- Organizations ---
 	s.mux.HandleFunc("GET /api/v1/orgs", s.authed(s.handleListOrgs))
