@@ -7,6 +7,7 @@ import type {
   ApiEnvelope,
   AuthResponse,
   ChangeRequestDetail,
+  ChangeRequestProjectSummary,
   ChangeRequestSummary,
   ChangeLog,
   CRComment,
@@ -368,6 +369,12 @@ export const changeRequests = {
       `/documents/${q(documentId)}/change-requests`,
     ),
   get: (id: string) => request<ChangeRequestDetail>(`/change-requests/${q(id)}`),
+  // Open Change Requests across a project's documents, so the project page can
+  // show its review queue to everyone who can see the project.
+  listOpenForProject: (projectId: string) =>
+    request<ChangeRequestProjectSummary[]>(
+      `/projects/${q(projectId)}/change-requests`,
+    ),
   merge: (
     id: string,
     resolution?: { resolved_title?: string; resolved_content_markdown?: string },

@@ -276,6 +276,21 @@ func (s *Service) ListForDocument(ctx context.Context, userID, documentID uuid.U
 	}
 	return out, nil
 }
+
+// ListOpenForProject returns the project's open Change Requests with each
+// document's title, so a project page can show the review queue. Visibility is
+// the same read gate the project's document list uses: seeing the project
+// means seeing what is under review inside it.
+func (s *Service) ListOpenForProject(ctx context.Context, userID, projectID uuid.UUID) ([]db.ListOpenChangeRequestsForProjectRow, error) {
+	visible, err := s.Checker.CanSeeProject(ctx, userID, projectID)
+	if err != nil {
+		return nil, err
+	}
+	if !visible {
+		return nil, permissions.ErrDenied
+	}
+	return s.Queries.ListOpenChangeRequestsForProject(ctx, projectID)
+}
 func (s *Service) view(ctx context.Context, cr db.ChangeRequest, doc db.Document) View {
 	head := uuid.Nil
 	if doc.HeadRevisionID.Valid {

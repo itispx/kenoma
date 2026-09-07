@@ -67,3 +67,15 @@ WHERE id = $1 AND deleted_at IS NULL;
 UPDATE cr_comment
 SET deleted_at = now()
 WHERE id = $1 AND deleted_at IS NULL;
+
+-- The project page's review queue: every open proposal across the project's
+-- documents, newest activity first. The document title rides along so the list
+-- reads without a second fetch, and the snapshot body stays off the list shape.
+-- name: ListOpenChangeRequestsForProject :many
+SELECT cr.id, cr.document_id, d.title AS document_title, cr.base_revision_id,
+       cr.kind, cr.title, cr.status, cr.opened_by, cr.created_at, cr.updated_at,
+       cr.workstream_id
+FROM change_request cr
+JOIN document d ON d.id = cr.document_id
+WHERE d.project_id = $1 AND cr.status = 'open'
+ORDER BY cr.updated_at DESC;

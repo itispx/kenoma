@@ -171,6 +171,57 @@ func (s *Server) handleListChangeRequestsForDocument(w http.ResponseWriter, r *h
 	httpx.WriteJSON(w, http.StatusOK, out)
 }
 
+// crProjectResponse is the project-scoped list shape: the review queue adds
+// each document's title so a row reads "open in <document>", which the
+// document-scoped list never needs.
+type crProjectResponse struct {
+	ID            string  `json:"id"`
+	DocumentID    string  `json:"document_id"`
+	ProjectID     string  `json:"project_id"`
+	DocumentTitle string  `json:"document_title"`
+	Kind          string  `json:"kind"`
+	Title         string  `json:"title"`
+	Status        string  `json:"status"`
+	OpenedBy      string  `json:"opened_by"`
+	CreatedAt     string  `json:"created_at"`
+	UpdatedAt     string  `json:"updated_at"`
+	WorkstreamID  *string `json:"workstream_id"`
+}
+
+func (s *Server) handleListOpenChangeRequestsForProject(w http.ResponseWriter, r *http.Request) {
+	userID, projectID, ok := callerAndPathID(w, r, "projectId")
+	if !ok {
+		return
+	}
+	rows, err := s.crSvc.ListOpenForProject(r.Context(), userID, projectID)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+	out := make([]crProjectResponse, 0, len(rows))
+	for _, row := range rows {
+		workstreamID := (*string)(nil)
+		if row.WorkstreamID.Valid {
+			s := row.WorkstreamID.UUID.String()
+			workstreamID = &s
+		}
+		out = append(out, crProjectResponse{
+			ID:            row.ID.String(),
+			DocumentID:    row.DocumentID.String(),
+			ProjectID:     projectID.String(),
+			DocumentTitle: row.DocumentTitle,
+			Kind:          row.Kind,
+			Title:         row.Title,
+			Status:        row.Status,
+			OpenedBy:      row.OpenedBy.String(),
+			CreatedAt:     row.CreatedAt.Format(time.RFC3339Nano),
+			UpdatedAt:     row.UpdatedAt.Format(time.RFC3339Nano),
+			WorkstreamID:  workstreamID,
+		})
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
 func (s *Server) handleGetChangeRequest(w http.ResponseWriter, r *http.Request) {
 	userID, crID, ok := callerAndPathID(w, r, "changeRequestId")
 	if !ok {

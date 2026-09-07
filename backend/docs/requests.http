@@ -90,6 +90,10 @@ Authorization: Bearer {{token}}
   "expected_latest_change_log_id": "{{latestChangeLogId}}"
 }
 
+### List the project's open Change Requests (the review queue, with document titles)
+GET {{host}}/projects/{{projectId}}/change-requests
+Authorization: Bearer {{token}}
+
 ### Save the first version. Expect 201
 POST {{host}}/documents/{{documentId}}/initial-version
 Content-Type: application/json

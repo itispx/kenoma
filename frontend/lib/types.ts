@@ -159,6 +159,22 @@ export interface ChangeRequest {
 // List responses leave the snapshot body out; the detail shape adds it.
 export type ChangeRequestSummary = Omit<ChangeRequest, "content_markdown">;
 
+// The project-scoped review queue: the summary shape plus the document's
+// title, so a project page can list open proposals without a second fetch.
+export interface ChangeRequestProjectSummary {
+  id: string;
+  document_id: string;
+  project_id: string;
+  document_title: string;
+  kind: "edit" | "import";
+  title: string;
+  status: "open" | "merged" | "closed";
+  opened_by: string;
+  created_at: string;
+  updated_at: string;
+  workstream_id: string | null;
+}
+
 export interface ChangeRequestDetail extends ChangeRequestSummary {
   content_markdown: string;
 }

@@ -84,6 +84,9 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("DELETE /api/v1/projects/{projectId}", s.authed(s.handleDeleteProject))
 	s.mux.HandleFunc("POST /api/v1/projects/{projectId}/restore", s.authed(s.handleRestoreProject))
 	s.mux.HandleFunc("GET /api/v1/projects/{projectId}/my-permissions", s.authed(s.handleMyProjectPermissions))
+	// Open Change Requests across the project's documents: the review queue a
+	// project page shows to anyone who can see the project.
+	s.mux.HandleFunc("GET /api/v1/projects/{projectId}/change-requests", s.authed(s.handleListOpenChangeRequestsForProject))
 
 	// --- Documents ---
 	s.mux.HandleFunc("GET /api/v1/projects/{projectId}/documents", s.authed(s.handleListDocuments))

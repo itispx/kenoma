@@ -3,10 +3,14 @@ import Link from "next/link";
 import { use, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { documents } from "@/lib/api";
-import type { DocSummary } from "@/lib/types";
+import { changeRequests, documents } from "@/lib/api";
+import type {
+  ChangeRequestProjectSummary,
+  DocSummary,
+} from "@/lib/types";
 import { usePermissions } from "@/lib/use-permissions";
 import { primaryBtn } from "@/components/auth-shell";
+import { CrStatusBadge } from "@/components/cr-status-badge";
 import { ImportDialog } from "@/components/import-dialog";
 import { cn } from "@/lib/utils";
 import { ErrorState, LoadingState } from "@/components/page-state";
@@ -19,6 +23,9 @@ export default function ProjectDocumentsPage({
     router = useRouter();
   const [docs, setDocs] = useState<DocSummary[] | null>(null);
   const [deletedDocs, setDeletedDocs] = useState<DocSummary[] | null>(null);
+  const [openCrs, setOpenCrs] = useState<ChangeRequestProjectSummary[] | null>(
+    null,
+  );
   const [error, setError] = useState("");
   const [creating, setCreating] = useState(false);
   const [restoring, setRestoring] = useState<string | null>(null);
@@ -30,6 +37,15 @@ export default function ProjectDocumentsPage({
       .listForProject(projectId)
       .then(setDocs)
       .catch(() => setError("Could not load documents."));
+  }, [projectId]);
+  // Open proposals across the project's documents: the review queue. Loaded
+  // for everyone who can see the project, and non-fatal on error so a stale
+  // queue never hides the document list.
+  useEffect(() => {
+    changeRequests
+      .listOpenForProject(projectId)
+      .then(setOpenCrs)
+      .catch(() => setOpenCrs([]));
   }, [projectId]);
   // The deleted list names rows the rest of the project no longer sees, so it
   // loads only for managers, under the same permission that removes and
@@ -135,6 +151,42 @@ export default function ProjectDocumentsPage({
             </li>
           ))}
         </ul>
+      )}
+      {openCrs && openCrs.length > 0 && (
+        <section className="mt-8">
+          <div className="mb-3 flex items-baseline justify-between gap-4">
+            <span className="text-xs tracking-widest text-console-400 uppercase">
+              Open Change Requests
+            </span>
+            <span className="text-xs text-console-400">
+              {openCrs.length}{" "}
+              {openCrs.length === 1 ? "proposal" : "proposals"} awaiting review
+            </span>
+          </div>
+          {/* A review queue, not a recovery surface: these rows are live work
+              that anyone who can see the project can read. */}
+          <ul className="surface-panel divide-y divide-console-600/60">
+            {openCrs.map((cr) => (
+              <li key={cr.id}>
+                <Link
+                  href={`/change-requests/${cr.id}`}
+                  className="row-hover focus-console flex items-center gap-3 px-gutter py-3"
+                >
+                  <CrStatusBadge status={cr.status} />
+                  <span className="min-w-0 flex-1 truncate text-sm text-console-50">
+                    {cr.title}
+                  </span>
+                  <span className="shrink-0 max-w-64 truncate font-mono text-xs text-console-400">
+                    {cr.document_title}
+                  </span>
+                  <span className="shrink-0 font-mono text-xs text-console-400">
+                    {cr.updated_at.slice(0, 16).replace("T", " ")}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       )}
       {canManage && deletedDocs && deletedDocs.length > 0 && (
         <section className="mt-8">

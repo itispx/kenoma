@@ -7,6 +7,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -362,4 +363,63 @@ WHERE id = $1 AND deleted_at IS NULL
 func (q *Queries) SoftDeleteCRComment(ctx context.Context, id uuid.UUID) error {
 	_, err := q.db.Exec(ctx, softDeleteCRComment, id)
 	return err
+}
+
+const listOpenChangeRequestsForProject = `-- name: ListOpenChangeRequestsForProject :many
+SELECT cr.id, cr.document_id, d.title AS document_title, cr.base_revision_id,
+       cr.kind, cr.title, cr.status, cr.opened_by, cr.created_at, cr.updated_at,
+       cr.workstream_id
+FROM change_request cr
+JOIN document d ON d.id = cr.document_id
+WHERE d.project_id = $1 AND cr.status = 'open'
+ORDER BY cr.updated_at DESC
+`
+
+type ListOpenChangeRequestsForProjectRow struct {
+	ID             uuid.UUID     `json:"id"`
+	DocumentID     uuid.UUID     `json:"document_id"`
+	DocumentTitle  string        `json:"document_title"`
+	BaseRevisionID uuid.UUID     `json:"base_revision_id"`
+	Kind           string        `json:"kind"`
+	Title          string        `json:"title"`
+	Status         string        `json:"status"`
+	OpenedBy       uuid.UUID     `json:"opened_by"`
+	CreatedAt      time.Time     `json:"created_at"`
+	UpdatedAt      time.Time     `json:"updated_at"`
+	WorkstreamID   uuid.NullUUID `json:"workstream_id"`
+}
+
+// The project page's review queue: every open proposal across the project's
+// documents, newest activity first. The document title rides along so the list
+// reads without a second fetch, and the snapshot body stays off the list shape.
+func (q *Queries) ListOpenChangeRequestsForProject(ctx context.Context, projectID uuid.UUID) ([]ListOpenChangeRequestsForProjectRow, error) {
+	rows, err := q.db.Query(ctx, listOpenChangeRequestsForProject, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOpenChangeRequestsForProjectRow{}
+	for rows.Next() {
+		var i ListOpenChangeRequestsForProjectRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.DocumentID,
+			&i.DocumentTitle,
+			&i.BaseRevisionID,
+			&i.Kind,
+			&i.Title,
+			&i.Status,
+			&i.OpenedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.WorkstreamID,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }

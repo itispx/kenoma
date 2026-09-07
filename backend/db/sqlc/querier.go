@@ -100,6 +100,10 @@ type Querier interface {
 	ListDeletedDocumentsForProject(ctx context.Context, projectID uuid.UUID) ([]ListDocumentsForProjectRow, error)
 	ListDeletedOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
 	ListDeletedProjectsForOrg(ctx context.Context, organizationID uuid.UUID) ([]Project, error)
+	// The project page's review queue: every open proposal across the project's
+	// documents, newest activity first. The document title rides along so the list
+	// reads without a second fetch, and the snapshot body stays off the list shape.
+	ListOpenChangeRequestsForProject(ctx context.Context, projectID uuid.UUID) ([]ListOpenChangeRequestsForProjectRow, error)
 	ListOrganizationInvitations(ctx context.Context, organizationID uuid.UUID) ([]OrganizationInvitation, error)
 	ListOrganizationMembers(ctx context.Context, organizationID uuid.UUID) ([]ListOrganizationMembersRow, error)
 	ListOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error)
