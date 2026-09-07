@@ -34,8 +34,10 @@ export function BranchesPanel({
   localSlots,
   userId,
   canCreate,
+  canImport,
   onSelect,
   onCreate,
+  onImport,
   onEdit,
   logDiff,
   selectedLogId,
@@ -47,8 +49,10 @@ export function BranchesPanel({
   localSlots: string[];
   userId: string | undefined;
   canCreate: boolean;
+  canImport: boolean;
   onSelect: (branchId: string | null) => void;
   onCreate: () => void;
+  onImport: () => void;
   onEdit: () => void;
   logDiff: DiffSpan[] | null;
   selectedLogId: string | null;
@@ -140,6 +144,14 @@ export function BranchesPanel({
               className="focus-console rounded-sm px-1 text-xs whitespace-nowrap text-console-300 underline-offset-4 hover:text-console-100 hover:underline"
             >
               New branch
+            </button>
+          )}
+          {canImport && (
+            <button
+              onClick={onImport}
+              className="focus-console rounded-sm px-1 text-xs whitespace-nowrap text-console-300 underline-offset-4 hover:text-console-100 hover:underline"
+            >
+              Import new version
             </button>
           )}
         </div>

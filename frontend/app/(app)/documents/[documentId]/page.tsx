@@ -47,6 +47,7 @@ import { DocumentViewer } from "@/components/document-viewer";
 import { DiffView } from "@/components/diff-view";
 import { BranchesPanel } from "@/components/branches-panel";
 import { CrStatusBadge } from "@/components/cr-status-badge";
+import { ImportDialog } from "@/components/import-dialog";
 import { inputClass, primaryBtn } from "@/components/auth-shell";
 import {
   ErrorState,
@@ -120,6 +121,7 @@ function DocumentView({
   const { user } = useAuth();
   const { has, loading } = usePermissions(doc.project_id);
   const canEdit = !loading && has("docs:edit");
+  const canImport = !loading && has("docs:import");
   const canSubmit = !loading && has("docs:submit_review");
   const canManage = !loading && has("docs:manage");
   const canApprove = !loading && has("docs:approve");
@@ -188,6 +190,7 @@ function DocumentView({
   const [creatingBranch, setCreatingBranch] = useState(false);
   const [openAfterCreate, setOpenAfterCreate] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [importRevisionOpen, setImportRevisionOpen] = useState(false);
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
   const [confirmingCloseReview, setConfirmingCloseReview] = useState(false);
   const [revisions, setRevisions] = useState<RevisionSummary[] | null>(null);
@@ -696,6 +699,12 @@ function DocumentView({
     }
   }
 
+  async function importRevision(file: File) {
+    const cr = await documents.importRevision(doc.id, file);
+    setImportRevisionOpen(false);
+    router.push(`/change-requests/${cr.id}`);
+  }
+
   async function remove() {
     try {
       await documents.remove(doc.id);
@@ -885,8 +894,10 @@ function DocumentView({
           localSlots={localSlots}
           userId={user?.id}
           canCreate={canEdit}
+          canImport={canImport}
           onSelect={selectBranch}
           onCreate={() => setBranchModal(true)}
+          onImport={() => setImportRevisionOpen(true)}
           onEdit={() => void openEditor()}
           logDiff={logDiff}
           selectedLogId={selectedLog?.id ?? null}
@@ -1273,6 +1284,15 @@ function DocumentView({
         description="This document will disappear from its project."
         confirm="Delete"
         onConfirm={remove}
+      />
+
+      <ImportDialog
+        open={importRevisionOpen}
+        onOpenChange={setImportRevisionOpen}
+        title="Import new version"
+        description="The docx is converted to Markdown and proposed as a new version through a Change Request, exactly like a branch."
+        submitLabel="Import"
+        onSubmit={importRevision}
       />
     </div>
   );

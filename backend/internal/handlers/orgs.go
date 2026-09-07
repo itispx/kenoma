@@ -47,11 +47,12 @@ func (s *Server) handleListOrgs(w http.ResponseWriter, r *http.Request) {
 	out := make([]organizationResponse, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, organizationResponse{
-			ID:         row.ID.String(),
-			Name:       row.Name,
-			IsPersonal: row.IsPersonal,
-			Role:       row.Role,
-			CreatedAt:  row.CreatedAt.Format(time.RFC3339),
+			ID:               row.ID.String(),
+			Name:             row.Name,
+			IsPersonal:       row.IsPersonal,
+			Role:             row.Role,
+			MembersCanInvite: row.MembersCanInvite,
+			CreatedAt:        row.CreatedAt.Format(time.RFC3339),
 		})
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
