@@ -86,6 +86,15 @@ func (s *Service) ListForUser(ctx context.Context, userID uuid.UUID) ([]db.ListO
 	return s.Queries.ListOrganizationsForUser(ctx, userID)
 }
 
+// ListDeletedForUser returns the organizations the caller administers that
+// have been soft-deleted, so an admin who removed an org can find and restore
+// it. Restore authorizes the same way — the caller must be that org's admin —
+// so the listing keys on the caller's own admin membership rather than on any
+// live-org path.
+func (s *Service) ListDeletedForUser(ctx context.Context, userID uuid.UUID) ([]db.ListOrganizationsForUserRow, error) {
+	return s.Queries.ListDeletedOrganizationsForUser(ctx, userID)
+}
+
 // Get requires membership: an organization's existence is not public. The
 // caller's role comes back with it — the client gates its own controls on it,
 // and the lookup happens here anyway.

@@ -83,6 +83,46 @@ func (q *Queries) GetOrganizationByID(ctx context.Context, id uuid.UUID) (Organi
 	return i, err
 }
 
+const listDeletedOrganizationsForUser = `-- name: ListDeletedOrganizationsForUser :many
+SELECT o.id, o.name, o.is_personal, o.members_can_invite, o.created_by, o.created_at, o.updated_at, o.deleted_at, m.role
+FROM organization o
+JOIN organization_member m ON m.organization_id = o.id
+WHERE m.user_id = $1 AND o.deleted_at IS NOT NULL AND m.role = 'admin'
+ORDER BY o.deleted_at DESC
+`
+
+// The caller's own admin membership is the gate: only an admin of a deleted
+// org can see and restore it, and a non-admin member never appears here.
+func (q *Queries) ListDeletedOrganizationsForUser(ctx context.Context, userID uuid.UUID) ([]ListOrganizationsForUserRow, error) {
+	rows, err := q.db.Query(ctx, listDeletedOrganizationsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListOrganizationsForUserRow{}
+	for rows.Next() {
+		var i ListOrganizationsForUserRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.IsPersonal,
+			&i.MembersCanInvite,
+			&i.CreatedBy,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.DeletedAt,
+			&i.Role,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listOrganizationsForUser = `-- name: ListOrganizationsForUser :many
 SELECT o.id, o.name, o.is_personal, o.members_can_invite, o.created_by, o.created_at, o.updated_at, o.deleted_at, m.role
 FROM organization o

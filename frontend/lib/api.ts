@@ -237,6 +237,9 @@ const requestSpans = (path: string) =>
 
 export const orgs = {
   list: () => request<Organization[]>("/orgs"),
+  // Soft-deleted organizations this user administers, so an admin who removed
+  // one can find and restore it from the workspace dashboard.
+  listDeleted: () => request<Organization[]>("/orgs/deleted"),
   create: (name: string) =>
     request<Organization>("/orgs", { method: "POST", body: { name } }),
   get: (id: string) => request<Organization>(`/orgs/${q(id)}`),

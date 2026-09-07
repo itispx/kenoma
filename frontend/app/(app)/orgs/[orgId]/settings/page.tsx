@@ -98,7 +98,8 @@ export default function OrgSettingsPage() {
       <div className="surface-panel border-signal-error/40 p-gutter-lg">
         <h2 className="font-medium text-signal-error">Danger zone</h2>
         <p className="my-2 text-sm text-console-300">
-          Delete this organization and hide all its projects.
+          Delete this organization and hide all its projects. Nothing is erased:
+          an admin can restore it from the workspace dashboard.
         </p>
         <ConfirmDialog
           trigger={
@@ -107,7 +108,7 @@ export default function OrgSettingsPage() {
             </button>
           }
           title="Delete organization?"
-          description="This organization will disappear from every workspace listing."
+          description="It disappears from every workspace listing. An admin can restore it from the workspace dashboard."
           confirm="Delete"
           onConfirm={remove}
         />

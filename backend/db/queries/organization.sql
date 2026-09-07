@@ -14,6 +14,13 @@ JOIN organization_member m ON m.organization_id = o.id
 WHERE m.user_id = $1 AND o.deleted_at IS NULL
 ORDER BY o.is_personal DESC, o.name;
 
+-- name: ListDeletedOrganizationsForUser :many
+SELECT o.*, m.role
+FROM organization o
+JOIN organization_member m ON m.organization_id = o.id
+WHERE m.user_id = $1 AND o.deleted_at IS NOT NULL AND m.role = 'admin'
+ORDER BY o.deleted_at DESC;
+
 -- name: UpdateOrganization :one
 UPDATE organization
 SET name = coalesce(sqlc.narg('name'), name),

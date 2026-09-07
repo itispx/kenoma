@@ -154,3 +154,17 @@ Authorization: Bearer {{token}}
 ### Restore. Expect 204, and it comes back
 POST {{host}}/projects/{{projectId}}/restore
 Authorization: Bearer {{token}}
+
+# --- Organization deletion & restore ------------------------------------------
+
+### Soft-delete the organization. Expect 204, and it leaves the workspace list
+DELETE {{host}}/orgs/{{orgId}}
+Authorization: Bearer {{token}}
+
+### List the caller's deleted organizations (the one above, with deleted_at)
+GET {{host}}/orgs/deleted
+Authorization: Bearer {{token}}
+
+### Restore. Expect 204, and it comes back
+POST {{host}}/orgs/{{orgId}}/restore
+Authorization: Bearer {{token}}

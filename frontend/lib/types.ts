@@ -34,6 +34,9 @@ export interface Organization {
   role?: OrgRole;
   members_can_invite: boolean;
   created_at: string;
+  // Only present on the deleted-orgs list, which is how a restore surface
+  // shows what was taken out without guessing from created_at.
+  deleted_at?: string;
 }
 export interface OrgMember {
   id: string;

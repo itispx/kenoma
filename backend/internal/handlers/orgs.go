@@ -13,16 +13,17 @@ import (
 )
 
 type organizationResponse struct {
-	ID               string `json:"id"`
-	Name             string `json:"name"`
-	IsPersonal       bool   `json:"is_personal"`
-	Role             string `json:"role,omitempty"`
-	MembersCanInvite bool   `json:"members_can_invite"`
-	CreatedAt        string `json:"created_at"`
+	ID               string  `json:"id"`
+	Name             string  `json:"name"`
+	IsPersonal       bool    `json:"is_personal"`
+	Role             string  `json:"role,omitempty"`
+	MembersCanInvite bool    `json:"members_can_invite"`
+	CreatedAt        string  `json:"created_at"`
+	DeletedAt        *string `json:"deleted_at,omitempty"`
 }
 
 func toOrganizationResponse(o db.Organization, role string) organizationResponse {
-	return organizationResponse{
+	resp := organizationResponse{
 		ID:               o.ID.String(),
 		Name:             o.Name,
 		IsPersonal:       o.IsPersonal,
@@ -30,6 +31,13 @@ func toOrganizationResponse(o db.Organization, role string) organizationResponse
 		MembersCanInvite: o.MembersCanInvite,
 		CreatedAt:        o.CreatedAt.Format(time.RFC3339),
 	}
+	// Only the deleted listing carries a timestamp; live orgs omit the field
+	// entirely rather than sending a null.
+	if o.DeletedAt.Valid {
+		value := o.DeletedAt.Time.Format(time.RFC3339)
+		resp.DeletedAt = &value
+	}
+	return resp
 }
 
 func (s *Server) handleListOrgs(w http.ResponseWriter, r *http.Request) {
@@ -46,14 +54,49 @@ func (s *Server) handleListOrgs(w http.ResponseWriter, r *http.Request) {
 
 	out := make([]organizationResponse, 0, len(rows))
 	for _, row := range rows {
-		out = append(out, organizationResponse{
-			ID:               row.ID.String(),
-			Name:             row.Name,
-			IsPersonal:       row.IsPersonal,
-			Role:             row.Role,
-			MembersCanInvite: row.MembersCanInvite,
-			CreatedAt:        row.CreatedAt.Format(time.RFC3339),
-		})
+		out = append(out, toOrganizationRowResponse(row))
+	}
+	httpx.WriteJSON(w, http.StatusOK, out)
+}
+
+// toOrganizationRowResponse shapes a membership row (org fields plus the
+// caller's role) into the wire response. Both the live and deleted lists use
+// the same row type, so this keeps the deleted_at field handling in one place.
+func toOrganizationRowResponse(row db.ListOrganizationsForUserRow) organizationResponse {
+	resp := organizationResponse{
+		ID:               row.ID.String(),
+		Name:             row.Name,
+		IsPersonal:       row.IsPersonal,
+		Role:             row.Role,
+		MembersCanInvite: row.MembersCanInvite,
+		CreatedAt:        row.CreatedAt.Format(time.RFC3339),
+	}
+	if row.DeletedAt.Valid {
+		value := row.DeletedAt.Time.Format(time.RFC3339)
+		resp.DeletedAt = &value
+	}
+	return resp
+}
+
+// handleListDeletedOrgs lists the organizations the caller administers that
+// have been taken out, so an admin who removed an org can find and restore it
+// from the workspace dashboard. The deleted orgs drop out of the ordinary
+// list, so this is the only way back in.
+func (s *Server) handleListDeletedOrgs(w http.ResponseWriter, r *http.Request) {
+	userID, ok := callerID(w, r)
+	if !ok {
+		return
+	}
+
+	rows, err := s.orgSvc.ListDeletedForUser(r.Context(), userID)
+	if err != nil {
+		writeTenantError(w, err)
+		return
+	}
+
+	out := make([]organizationResponse, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, toOrganizationRowResponse(row))
 	}
 	httpx.WriteJSON(w, http.StatusOK, out)
 }

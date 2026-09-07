@@ -53,6 +53,10 @@ func (s *Server) registerRoutes() {
 	// --- Organizations ---
 	s.mux.HandleFunc("GET /api/v1/orgs", s.authed(s.handleListOrgs))
 	s.mux.HandleFunc("POST /api/v1/orgs", s.authed(s.handleCreateOrg))
+	// Deleted orgs, for admins restoring one that was taken out. The literal
+	// segment beats the {orgId} wildcard on the next line, so this stays
+	// unambiguous. A separate path keeps the ordinary list cheap.
+	s.mux.HandleFunc("GET /api/v1/orgs/deleted", s.authed(s.handleListDeletedOrgs))
 	s.mux.HandleFunc("GET /api/v1/orgs/{orgId}", s.authed(s.handleGetOrg))
 	s.mux.HandleFunc("PATCH /api/v1/orgs/{orgId}", s.authed(s.handleUpdateOrg))
 	s.mux.HandleFunc("DELETE /api/v1/orgs/{orgId}", s.authed(s.handleDeleteOrg))
