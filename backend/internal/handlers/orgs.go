@@ -277,6 +277,10 @@ type invitationResponse struct {
 	ExpiresAt string `json:"expires_at"`
 	CreatedAt string `json:"created_at"`
 	CanRevoke bool   `json:"can_revoke"`
+	// Only the create response carries the accept link: the raw token is
+	// never stored, only hashed, so there is nothing to reconstruct it from
+	// on the list endpoint.
+	AcceptLink string `json:"accept_link,omitempty"`
 }
 
 // canRevokeInvitation mirrors the service rule: admins revoke anything, a
@@ -311,13 +315,17 @@ func (s *Server) handleInvite(w http.ResponseWriter, r *http.Request) {
 	if !decodeBody(w, r, &req) {
 		return
 	}
-	inv, err := s.orgSvc.Invite(r.Context(), userID, orgID, req.Email, req.Role)
+	inv, link, err := s.orgSvc.Invite(r.Context(), userID, orgID, req.Email, req.Role)
 	if err != nil {
 		writeTenantError(w, err)
 		return
 	}
-	// The sender can always take back what they just sent.
-	httpx.WriteJSON(w, http.StatusCreated, toInvitationResponse(inv, true))
+	// The sender can always take back what they just sent. The accept link
+	// rides on the create response only: the raw token is hashed in the DB,
+	// so the list endpoint cannot reconstruct it for existing invitations.
+	resp := toInvitationResponse(inv, true)
+	resp.AcceptLink = link
+	httpx.WriteJSON(w, http.StatusCreated, resp)
 }
 
 func (s *Server) handleListInvitations(w http.ResponseWriter, r *http.Request) {

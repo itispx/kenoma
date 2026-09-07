@@ -316,28 +316,28 @@ func (s *Service) isLastAdmin(ctx context.Context, orgID uuid.UUID) (bool, error
 
 // Invite emails an opaque token. Only its hash is stored, the same treatment
 // password reset tokens get, so a database dump yields nothing usable.
-func (s *Service) Invite(ctx context.Context, userID, orgID uuid.UUID, rawEmail, role string) (db.OrganizationInvitation, error) {
+func (s *Service) Invite(ctx context.Context, userID, orgID uuid.UUID, rawEmail, role string) (db.OrganizationInvitation, string, error) {
 	if role != permissions.RoleAdmin && role != permissions.RoleMember {
-		return db.OrganizationInvitation{}, fmt.Errorf("%w: role must be admin or member", ErrValidation)
+		return db.OrganizationInvitation{}, "", fmt.Errorf("%w: role must be admin or member", ErrValidation)
 	}
 	addr, err := mail.ParseAddress(strings.TrimSpace(rawEmail))
 	if err != nil {
-		return db.OrganizationInvitation{}, fmt.Errorf("%w: invalid email format", ErrValidation)
+		return db.OrganizationInvitation{}, "", fmt.Errorf("%w: invalid email format", ErrValidation)
 	}
 
 	org, callerRole, err := s.requireMemberOnRealOrg(ctx, userID, orgID)
 	if err != nil {
-		return db.OrganizationInvitation{}, err
+		return db.OrganizationInvitation{}, "", err
 	}
 	// Inviting is the one act an admin can delegate, and only halfway: a
 	// member who may invite may only ever add another member. Handing out
 	// admin stays an admin's decision.
 	if callerRole != permissions.RoleAdmin {
 		if !org.MembersCanInvite {
-			return db.OrganizationInvitation{}, permissions.ErrDenied
+			return db.OrganizationInvitation{}, "", permissions.ErrDenied
 		}
 		if role != permissions.RoleMember {
-			return db.OrganizationInvitation{}, ErrInviteRoleNotAllowed
+			return db.OrganizationInvitation{}, "", ErrInviteRoleNotAllowed
 		}
 	}
 
@@ -346,18 +346,18 @@ func (s *Service) Invite(ctx context.Context, userID, orgID uuid.UUID, rawEmail,
 	if existing, err := s.Queries.GetUserByEmail(ctx, addr.Address); err == nil {
 		isMember, err := s.Checker.IsOrgMember(ctx, existing.ID, orgID)
 		if err != nil {
-			return db.OrganizationInvitation{}, err
+			return db.OrganizationInvitation{}, "", err
 		}
 		if isMember {
-			return db.OrganizationInvitation{}, ErrAlreadyMember
+			return db.OrganizationInvitation{}, "", ErrAlreadyMember
 		}
 	} else if !errors.Is(err, pgx.ErrNoRows) {
-		return db.OrganizationInvitation{}, err
+		return db.OrganizationInvitation{}, "", err
 	}
 
 	rawToken, err := authpkg.GenerateOpaqueToken()
 	if err != nil {
-		return db.OrganizationInvitation{}, err
+		return db.OrganizationInvitation{}, "", err
 	}
 
 	inv, err := s.Queries.CreateOrganizationInvitation(ctx, db.CreateOrganizationInvitationParams{
@@ -370,7 +370,7 @@ func (s *Service) Invite(ctx context.Context, userID, orgID uuid.UUID, rawEmail,
 	})
 	if err != nil {
 		// The partial unique index means one live invitation per address.
-		return db.OrganizationInvitation{}, ErrInviteDuplicate
+		return db.OrganizationInvitation{}, "", ErrInviteDuplicate
 	}
 
 	link := fmt.Sprintf("%s/invitations/accept?token=%s", s.Cfg.FrontendURL, rawToken)
@@ -379,9 +379,9 @@ func (s *Service) Invite(ctx context.Context, userID, orgID uuid.UUID, rawEmail,
 		org.Name, s.Cfg.InvitationTTL, link, link,
 	)
 	if err := s.Sender.Send(ctx, addr.Address, "You've been invited to Kenoma", body); err != nil {
-		return db.OrganizationInvitation{}, err
+		return db.OrganizationInvitation{}, "", err
 	}
-	return inv, nil
+	return inv, link, nil
 }
 
 // ListInvitations is open to every member: who is being brought into the

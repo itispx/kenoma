@@ -53,6 +53,9 @@ export interface Invitation {
   expires_at: string;
   created_at: string;
   can_revoke: boolean;
+  // Only the create response carries this: the raw token is hashed in the
+  // DB, so an invitation already on the list cannot have its link rebuilt.
+  accept_link?: string;
 }
 export interface Project {
   id: string;

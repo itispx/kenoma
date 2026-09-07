@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable react-hooks/exhaustive-deps */
 import { FormEvent, useEffect, useState } from "react";
+import { Check, Copy } from "lucide-react";
 import { ApiError, orgs } from "@/lib/api";
 import type { Invitation, OrgRole } from "@/lib/types";
 import { useOrg } from "@/components/org-context";
@@ -22,6 +23,10 @@ export default function InvitationsPage() {
   const [role, setRole] = useState<OrgRole>("member");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  // The just-created invite's accept link, so the sender can copy it out of
+  // the page instead of digging through the email/console delivery.
+  const [createdLink, setCreatedLink] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const load = () =>
     orgs
       .listInvitations(org.id)
@@ -36,8 +41,10 @@ export default function InvitationsPage() {
     setBusy(true);
     setError("");
     try {
-      await orgs.invite(org.id, email, isAdmin ? role : "member");
+      const created = await orgs.invite(org.id, email, isAdmin ? role : "member");
       setEmail("");
+      setCreatedLink(created.accept_link ?? null);
+      setCopied(false);
       await load();
     } catch (e) {
       setError(
@@ -55,6 +62,15 @@ export default function InvitationsPage() {
       await load();
     } catch {
       setError("Could not revoke the invitation.");
+    }
+  }
+  async function copyLink() {
+    if (!createdLink) return;
+    try {
+      await navigator.clipboard.writeText(createdLink);
+      setCopied(true);
+    } catch {
+      setCopied(false);
     }
   }
   return (
@@ -104,6 +120,35 @@ export default function InvitationsPage() {
           {busy ? "Sending…" : "Invite"}
         </button>
       </form>
+      {createdLink && (
+        <div className="surface-panel mb-5 p-gutter">
+          <p className="text-sm text-console-100">Invitation sent.</p>
+          <p className="mt-1 text-xs text-console-300">
+            Share this link with the person you invited. It stops working once
+            accepted or revoked.
+          </p>
+          <div className="mt-3 flex items-center gap-2">
+            <code className="min-w-0 flex-1 truncate rounded-sm border border-console-600 bg-console-950 px-2 py-1.5 font-mono text-xs text-console-100">
+              {createdLink}
+            </code>
+            <button
+              type="button"
+              onClick={() => void copyLink()}
+              aria-label="Copy invitation link"
+              className="focus-console flex h-8 w-8 shrink-0 items-center justify-center rounded-sm text-console-400 transition-colors hover:text-console-100"
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-signal-success" aria-hidden />
+              ) : (
+                <Copy className="h-3.5 w-3.5" aria-hidden />
+              )}
+            </button>
+            <span role="status" aria-live="polite" className="sr-only">
+              {copied ? "Invitation link copied" : ""}
+            </span>
+          </div>
+        </div>
+      )}
       {!items ? (
         <LoadingState />
       ) : (

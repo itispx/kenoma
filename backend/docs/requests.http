@@ -40,6 +40,29 @@ Authorization: Bearer {{token}}
 
 { "name": "Handbook" }
 
+### Invite a member. The response carries accept_link (the raw token is only
+# hashed in the DB, so the create response is the one place the link exists)
+POST {{host}}/orgs/{{orgId}}/invitations
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "email": "reviewer@example.com", "role": "member" }
+
+### List pending invitations (no accept_link here, by design)
+GET {{host}}/orgs/{{orgId}}/invitations
+Authorization: Bearer {{token}}
+
+### Accept an invitation (paste the token from the accept_link above)
+POST {{host}}/invitations/accept
+Content-Type: application/json
+Authorization: Bearer {{token}}
+
+{ "token": "paste the token from the invite email or accept_link" }
+
+### Revoke the invitation. Expect 204
+DELETE {{host}}/orgs/{{orgId}}/invitations/{{invitationId}}
+Authorization: Bearer {{token}}
+
 # --- Documents ---------------------------------------------------------------
 
 ### Create a headless document (copy id into @documentId)
